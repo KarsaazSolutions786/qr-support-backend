@@ -27,19 +27,30 @@ class SvgToPngService {
         const startTime = Date.now();
 
         try {
-            const size = this.clampSize(options.size || this.defaultSize);
+            const width = this.clampSize(options.width || options.size || this.defaultSize);
+            const height = this.clampSize(options.height || options.size || this.defaultSize);
             const quality = Math.min(100, Math.max(1, options.quality || this.defaultQuality));
 
-            // Preprocess SVG for better compatibility
-            const processedSvg = this.preprocessSvg(svgContent, size);
+            // If preprocessed flag is set, skip preprocessing
+            // The SVG has already been processed by svgPreprocessor
+            let processedSvg = svgContent;
+            if (!options.preprocessed) {
+                processedSvg = this.preprocessSvg(svgContent, width);
+            }
+
+            // Parse background color
+            const bgColor = this.parseBackgroundColor(options.background, options.transparent);
+
+            logger.debug(`Converting SVG to PNG: ${width}x${height}, bg=${JSON.stringify(bgColor)}`);
 
             // Convert using Sharp
-            const pngBuffer = await sharp(Buffer.from(processedSvg))
-                .resize(size, size, {
+            const pngBuffer = await sharp(Buffer.from(processedSvg), {
+                // Increase density for better quality
+                density: 150,
+            })
+                .resize(width, height, {
                     fit: 'contain',
-                    background: options.transparent
-                        ? { r: 0, g: 0, b: 0, alpha: 0 }
-                        : { r: 255, g: 255, b: 255, alpha: 1 },
+                    background: bgColor,
                 })
                 .png({
                     quality: quality,
@@ -53,8 +64,71 @@ class SvgToPngService {
             return pngBuffer;
         } catch (error) {
             logger.error(`SVG to PNG conversion failed: ${error.message}`);
+            logger.error(`SVG content preview: ${svgContent.substring(0, 500)}...`);
             throw new Error(`PNG conversion failed: ${error.message}`);
         }
+    }
+
+    /**
+     * Parse background color option
+     *
+     * @param {string|object} background - Background color (hex, rgb, or object)
+     * @param {boolean} transparent - If true, use transparent background
+     * @returns {object} RGBA object for Sharp
+     */
+    parseBackgroundColor(background, transparent) {
+        if (transparent) {
+            return { r: 0, g: 0, b: 0, alpha: 0 };
+        }
+
+        if (!background) {
+            return { r: 255, g: 255, b: 255, alpha: 1 };
+        }
+
+        // Already an object
+        if (typeof background === 'object') {
+            return {
+                r: background.r || 255,
+                g: background.g || 255,
+                b: background.b || 255,
+                alpha: background.alpha !== undefined ? background.alpha : 1,
+            };
+        }
+
+        // Parse hex color
+        if (typeof background === 'string') {
+            let hex = background.trim();
+
+            // Remove # prefix
+            if (hex.startsWith('#')) {
+                hex = hex.slice(1);
+            }
+
+            // Expand 3-digit hex
+            if (hex.length === 3) {
+                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+            }
+
+            // Parse
+            if (hex.length === 6 || hex.length === 8) {
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                const a = hex.length === 8 ? parseInt(hex.substring(6, 8), 16) / 255 : 1;
+
+                if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+                    return { r, g, b, alpha: a };
+                }
+            }
+
+            // Handle 'none' or 'transparent'
+            if (hex.toLowerCase() === 'none' || hex.toLowerCase() === 'transparent') {
+                return { r: 0, g: 0, b: 0, alpha: 0 };
+            }
+        }
+
+        // Default to white
+        return { r: 255, g: 255, b: 255, alpha: 1 };
     }
 
     /**

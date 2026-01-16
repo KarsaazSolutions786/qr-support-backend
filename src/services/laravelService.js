@@ -110,19 +110,86 @@ class LaravelService {
      * Get QR code preview SVG from Laravel Flutter endpoint
      *
      * This endpoint returns SVG when format='svg' or 'both'.
-     * Response format: { success: true, preview: { svg: "..." }, meta: {...} }
+     * Response format varies - this method normalizes the response.
      *
      * @param {object} previewData - Preview request data
      * @param {string} authToken - Optional auth token
-     * @returns {Promise<object>} Preview response with SVG
+     * @returns {Promise<object>} Normalized response with SVG content
      */
     async getPreviewSvg(previewData, authToken = null) {
         // Ensure we request SVG format
         const data = {
             ...previewData,
             output_format: 'svg',
+            format: 'svg',
         };
-        return this.request('POST', '/api/flutter/preview', data, authToken);
+
+        logger.debug(`Requesting SVG from Laravel: ${JSON.stringify(data)}`);
+
+        const response = await this.request('POST', '/api/flutter/preview', data, authToken);
+
+        // Normalize the response to ensure SVG is accessible
+        const normalized = {
+            success: response.success,
+            data: this.extractSvgFromResponse(response),
+            raw: response,
+        };
+
+        logger.debug(`Laravel SVG response normalized: success=${normalized.success}, hasSvg=${!!normalized.data?.svg}`);
+
+        return normalized;
+    }
+
+    /**
+     * Extract SVG content from various Laravel response formats
+     *
+     * Laravel might return SVG in different ways:
+     * - response.data.svg
+     * - response.data.images.svg
+     * - response.data.images.svg_base64
+     * - response.preview.svg
+     * - response.svg (direct)
+     *
+     * @param {object} response - Laravel API response
+     * @returns {object} Normalized data object with svg property
+     */
+    extractSvgFromResponse(response) {
+        let svg = null;
+
+        // Try different paths where SVG might be
+        if (response.data?.svg) {
+            svg = response.data.svg;
+        } else if (response.data?.images?.svg) {
+            svg = response.data.images.svg;
+        } else if (response.data?.images?.svg_base64) {
+            svg = Buffer.from(response.data.images.svg_base64, 'base64').toString('utf-8');
+        } else if (response.preview?.svg) {
+            svg = response.preview.svg;
+        } else if (response.preview?.images?.svg) {
+            svg = response.preview.images.svg;
+        } else if (response.preview?.images?.svg_base64) {
+            svg = Buffer.from(response.preview.images.svg_base64, 'base64').toString('utf-8');
+        } else if (response.svg) {
+            svg = response.svg;
+        } else if (response.images?.svg) {
+            svg = response.images.svg;
+        } else if (response.images?.svg_base64) {
+            svg = Buffer.from(response.images.svg_base64, 'base64').toString('utf-8');
+        }
+
+        // If SVG is base64 encoded (starts with PD94 which is <?x in base64)
+        if (svg && svg.startsWith('PD94')) {
+            svg = Buffer.from(svg, 'base64').toString('utf-8');
+        }
+
+        return {
+            svg,
+            images: {
+                svg,
+                svg_base64: svg ? Buffer.from(svg).toString('base64') : null,
+            },
+            meta: response.meta || response.data?.meta || {},
+        };
     }
 
     /**
