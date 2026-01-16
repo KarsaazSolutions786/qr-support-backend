@@ -228,13 +228,22 @@ class SvgToPngService {
             // Handle class selectors
             if (selector.startsWith('.')) {
                 const className = selector.slice(1);
-                const classRegex = new RegExp(`class=["']([^"']*\\b${className}\\b[^"']*)["']`, 'g');
+                // Match the entire element tag to check for existing attributes
+                const elementRegex = new RegExp(`<(\\w+)([^>]*class=["'][^"']*\\b${className}\\b[^"']*["'][^>]*)>`, 'g');
 
-                processed = processed.replace(classRegex, (match, classes) => {
-                    const styleStr = Object.entries(properties)
-                        .map(([prop, val]) => `${this.cssToAttr(prop)}="${val}"`)
-                        .join(' ');
-                    return `${match} ${styleStr}`;
+                processed = processed.replace(elementRegex, (match, tagName, attributes) => {
+                    let newAttributes = attributes;
+
+                    for (const [prop, val] of Object.entries(properties)) {
+                        const attrName = this.cssToAttr(prop);
+                        // Only add attribute if it doesn't already exist on the element
+                        const attrRegex = new RegExp(`\\b${attrName}\\s*=\\s*["'][^"']*["']`, 'i');
+                        if (!attrRegex.test(attributes)) {
+                            newAttributes += ` ${attrName}="${val}"`;
+                        }
+                    }
+
+                    return `<${tagName}${newAttributes}>`;
                 });
             }
         }
