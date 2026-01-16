@@ -2,11 +2,12 @@
  * Preview Controller
  *
  * Handles QR code preview generation requests.
- * Gets design data from Laravel, converts SVG to PNG using Sharp.
+ * Generates styled QR codes directly in Node.js for full control.
  */
 
 const laravelService = require('../services/laravelService');
 const svgToPngService = require('../services/svgToPngService');
+const qrGeneratorService = require('../services/qrGeneratorService');
 const cacheService = require('../services/cacheService');
 const logger = require('../utils/logger');
 
@@ -77,112 +78,39 @@ exports.generatePreview = async (req, res) => {
             });
         }
 
-        const authToken = req.headers['authorization'];
-        let pngBase64 = null;
-        let qrPayload = null;
-        let responseDesign = design;
+        // Generate QR code directly in Node.js for full styling control
+        logger.debug(`Generating QR directly: type=${type}, fg=${design.foreground_color}`);
 
-        // Strategy 1: Try v2 API first (may return PNG directly if Imagick available)
-        try {
-            const v2Response = await laravelService.getPreview({
-                type,
-                data,
-                design,
-                output_format: 'png',
-                force_server: true,
-            }, authToken);
+        // Encode data based on QR type
+        const qrPayload = qrGeneratorService.encodeData(type, data);
+        logger.debug(`Encoded payload: ${qrPayload.substring(0, 100)}...`);
 
-            // If Laravel returned PNG, use it
-            if (v2Response.data?.images?.png_base64) {
-                const duration = Date.now() - startTime;
-                return res.json({
-                    success: true,
-                    data: {
-                        ...v2Response.data,
-                        meta: {
-                            ...v2Response.data.meta,
-                            node_processed: false,
-                            generation_ms: duration,
-                        },
-                    },
-                });
-            }
+        // Generate styled QR code as PNG
+        const pngBuffer = await qrGeneratorService.generate(qrPayload, design, size, quality);
+        const pngBase64 = pngBuffer.toString('base64');
 
-            // Extract qr_payload and design from v2 response
-            qrPayload = v2Response.data?.qr_payload;
-            if (v2Response.data?.design) {
-                responseDesign = v2Response.data.design;
-            }
-        } catch (v2Error) {
-            logger.warn(`V2 preview failed, trying original endpoint: ${v2Error.message}`);
-        }
-
-        // Strategy 2: Get SVG from original preview endpoint and convert
-        try {
-            const svgResponse = await laravelService.getPreviewSvg({
-                type,
-                data,
-                design,
-            }, authToken);
-
-            // Extract SVG from Laravel response
-            // Response format: { success: true, preview: { svg: "..." }, meta: {...} }
-            let svgContent = null;
-            if (svgResponse.preview?.svg) {
-                svgContent = svgResponse.preview.svg;
-            } else if (svgResponse.svg) {
-                svgContent = svgResponse.svg;
-            } else if (svgResponse.data?.preview?.svg) {
-                svgContent = svgResponse.data.preview.svg;
-            } else if (svgResponse.data?.svg) {
-                svgContent = svgResponse.data.svg;
-            }
-
-            logger.debug(`SVG extraction: found=${!!svgContent}, keys=${Object.keys(svgResponse || {}).join(',')}`);
-            if (svgResponse.preview) {
-                logger.debug(`Preview keys: ${Object.keys(svgResponse.preview).join(',')}`);
-            }
-
-            if (svgContent) {
-                logger.debug('Converting SVG to PNG using Sharp');
-                const pngBuffer = await svgToPngService.convert(svgContent, {
-                    size,
-                    quality,
-                    transparent: design.transparent_background || false,
-                });
-
-                pngBase64 = pngBuffer.toString('base64');
-
-                // Cache the result
-                await cacheService.set(cacheKey, pngBuffer);
-            }
-
-            // Extract qr_payload if not already set
-            if (!qrPayload) {
-                qrPayload = svgResponse.qr_payload || svgResponse.data?.qr_payload;
-            }
-        } catch (svgError) {
-            logger.warn(`SVG preview failed: ${svgError.message}`);
-        }
+        // Cache the result
+        await cacheService.set(cacheKey, pngBuffer);
 
         const duration = Date.now() - startTime;
 
         res.json({
             success: true,
             data: {
-                rendering_strategy: pngBase64 ? 'server' : 'native',
-                strategy_reason: pngBase64 ? 'node_converted' : 'no_svg_available',
+                rendering_strategy: 'server',
+                strategy_reason: 'node_generated',
                 qr_payload: qrPayload,
-                design: responseDesign,
-                images: pngBase64 ? {
+                design: design,
+                images: {
                     png_base64: pngBase64,
                     format: 'png',
                     size: `${size}x${size}`,
-                } : null,
+                },
                 meta: {
                     type,
                     cached: false,
-                    node_processed: !!pngBase64,
+                    node_processed: true,
+                    node_generated: true,
                     generation_ms: duration,
                 },
             },
