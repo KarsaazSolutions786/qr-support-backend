@@ -9,10 +9,10 @@
  * Flutter → Node.js → Laravel (SVG) → SVGPreprocessor → Sharp (PNG) → Flutter
  */
 
-const laravelService = require('../services/laravelService');
-const svgToPngService = require('../services/svgToPngService');
-const svgPreprocessor = require('../services/svgPreprocessor');
-const qrGeneratorService = require('../services/qrGeneratorService');
+const QRCodeGenerator = require('../services/qr/QRCodeGenerator');
+const QRDataEncoder = require('../services/qr/QRDataEncoder');
+
+const generator = new QRCodeGenerator();
 const cacheService = require('../services/cacheService');
 const logger = require('../utils/logger');
 
@@ -198,53 +198,21 @@ exports.generatePreview = async (req, res) => {
  * Check if design requires Laravel features
  */
 function checkLaravelFeatures(design) {
-    // Always use Laravel if any advanced features are present
-    const advancedFeatures = [
-        // Module shapes
-        design.module_shape && design.module_shape !== 'square',
-        design.module && design.module !== 'square',
-
-        // Finder patterns
-        design.finder_pattern && design.finder_pattern !== 'default',
-        design.finder && design.finder !== 'default',
-
-        // Finder dots
-        design.finder_dot && design.finder_dot !== 'default',
-        design.finderDot && design.finderDot !== 'default',
-
-        // Eye colors
-        design.eye_external_color,
-        design.eye_internal_color,
-        design.eyeExternalColor,
-        design.eyeInternalColor,
-
-        // Gradients
-        design.fill_type === 'gradient',
-        design.fillType === 'gradient',
-        design.gradient_fill,
-        design.gradientFill,
-
-        // Logo
-        design.logo,
-        design.logo_url,
-        design.logoUrl,
-
-        // Advanced shapes
-        design.shape && !['square', 'default'].includes(design.shape),
-        design.outlined_shape,
-        design.outlinedShape,
-    ];
-
-    return advancedFeatures.some(Boolean);
+    // Node.js now handles all features - no need for Laravel
+    return false;
 }
 
 /**
  * Generate QR code using Node.js
  */
 async function generateWithNode(type, data, design, size, quality) {
-    const qrPayload = qrGeneratorService.encodeData(type, data);
-    logger.debug(`Node.js encoding: ${qrPayload.substring(0, 100)}...`);
-    return await qrGeneratorService.generate(qrPayload, design, size, quality);
+    logger.debug('Generating QR with Node.js QRCodeGenerator');
+    const result = await generator.generatePreview(type, data, design, {
+        size: parseInt(size) || 512,
+        quality: parseInt(quality) || 90,
+    });
+    // Return PNG buffer
+    return Buffer.from(result.pngBase64, 'base64');
 }
 
 /**
@@ -389,27 +357,27 @@ exports.generateFromLaravel = async (req, res) => {
  */
 exports.getCapabilities = async (req, res) => {
     try {
+        const capabilities = QRCodeGenerator.getCapabilities();
         res.json({
             success: true,
             data: {
-                node_features: {
-                    basic_qr: true,
-                    colors: true,
-                    simple_gradients: true,
-                    types: ['url', 'text', 'email', 'phone', 'sms', 'wifi', 'vcard', 'location'],
+                version: capabilities.version,
+                architecture: 'standalone',
+                types: capabilities.types,
+                features: {
+                    module_shapes: capabilities.features.modules.shapes,
+                    finder_shapes: capabilities.features.finders.shapes,
+                    finder_dot_shapes: capabilities.features.finders.dotShapes,
+                    colors: { foreground: true, background: true, eye_internal: true, eye_external: true },
+                    gradients: capabilities.features.colors.gradientTypes,
+                    logo: {
+                        supported: true,
+                        formats: ['png', 'jpg', 'svg', 'gif', 'webp'],
+                        background_shapes: capabilities.features.logo.backgroundShapes,
+                    },
+                    frames: capabilities.features.frames?.types || [],
+                    error_correction: capabilities.features.errorCorrection,
                 },
-                laravel_features: {
-                    module_shapes: ['square', 'dots', 'rounded', 'extra-rounded', 'rhombus', 'diamond', 'vertical', 'horizontal'],
-                    finder_patterns: ['default', 'rounded', 'circle', 'eye-shaped', 'leaf', 'dot'],
-                    finder_dots: ['default', 'rounded', 'circle', 'eye-shaped', 'leaf', 'diamond'],
-                    colors: true,
-                    gradients: ['linear', 'radial'],
-                    eye_colors: true,
-                    logo_embedding: true,
-                    advanced_shapes: ['four-corners-text-bottom', 'healthcare', 'review-collector'],
-                    outlined_shapes: true,
-                },
-                preprocessing: svgPreprocessor.getInfo(),
             },
         });
     } catch (error) {
