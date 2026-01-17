@@ -3,6 +3,8 @@
  *
  * Node.js middleware that sits between Flutter app and Laravel backend.
  * Handles SVG-to-PNG conversion using Sharp for reliable image rendering.
+ *
+ * V2 API: Full QR generation without Laravel dependency
  */
 
 require('dotenv').config();
@@ -48,7 +50,8 @@ app.use((req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
         const duration = Date.now() - start;
-        logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
+        const logMsg = req.method + ' ' + req.originalUrl + ' ' + res.statusCode + ' ' + duration + 'ms';
+        logger.info(logMsg);
     });
     next();
 });
@@ -59,27 +62,32 @@ app.get('/health', (req, res) => {
         success: true,
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        version: '1.0.0',
+        version: '2.0.0',
+        features: {
+            v1: 'Laravel-dependent QR generation',
+            v2: 'Standalone QR generation (no Laravel dependency)',
+        },
     });
 });
 
-// API routes
+// API routes (includes both V1 and V2)
 app.use('/api', routes);
 
 // 404 handler
 app.use((req, res) => {
+    const errorMsg = 'Route ' + req.method + ' ' + req.originalUrl + ' not found';
     res.status(404).json({
         success: false,
         error: {
             code: 'NOT_FOUND',
-            message: `Route ${req.method} ${req.originalUrl} not found`,
+            message: errorMsg,
         },
     });
 });
 
 // Error handler
 app.use((err, req, res, next) => {
-    logger.error(`Error: ${err.message}`, { stack: err.stack });
+    logger.error('Error: ' + err.message, { stack: err.stack });
     res.status(err.status || 500).json({
         success: false,
         error: {
@@ -93,8 +101,9 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-    logger.info(`QR Support Backend running on port ${PORT}`);
-    logger.info(`Laravel backend: ${process.env.LARAVEL_BACKEND_URL || 'http://localhost:8000'}`);
+    logger.info('QR Support Backend running on port ' + PORT);
+    logger.info('Laravel backend: ' + (process.env.LARAVEL_BACKEND_URL || 'http://localhost:8000'));
+    logger.info('V2 API available at /api/v2/qr/*');
 });
 
 module.exports = app;
