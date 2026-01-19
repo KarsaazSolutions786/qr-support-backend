@@ -109,6 +109,8 @@ class FinderProcessor extends BaseProcessor {
     async process(payload) {
         const { design } = payload;
 
+        console.log(`[FinderProcessor] process called with design.finder: ${design.finder}, design.finderDot: ${design.finderDot}`);
+
         // Get finder shape
         const finderShape = this.normalizeShape(
             design.finder || design.finderShape || design.eyeShape || 'square',
@@ -127,6 +129,8 @@ class FinderProcessor extends BaseProcessor {
         payload.finderPathGenerator = this.getFinderPathGenerator(finderShape);
         payload.finderDotPathGenerator = this.getDotPathGenerator(finderDotShape);
 
+        console.log(`[FinderProcessor] Final finder shape: ${finderShape}, dot shape: ${finderDotShape}`);
+        console.log(`[FinderProcessor] Generator exists - finder: ${!!payload.finderPathGenerator}, dot: ${!!payload.finderDotPathGenerator}`);
         this.log('Finder shape: ' + finderShape + ', dot shape: ' + finderDotShape);
 
         return payload;
@@ -140,10 +144,19 @@ class FinderProcessor extends BaseProcessor {
 
         const normalized = shape.toLowerCase().replace(/_/g, '-');
 
+        // Try normalized version first
         if (shapeMap[normalized]) {
+            console.log(`[FinderProcessor] Shape resolved: ${shape} → ${normalized}`);
             return normalized;
         }
 
+        // Try original value
+        if (shapeMap[shape]) {
+            console.log(`[FinderProcessor] Shape resolved (direct): ${shape}`);
+            return shape;
+        }
+
+        console.log(`[FinderProcessor] Unknown finder shape: ${shape} (normalized: ${normalized}), falling back to square`);
         this.log('Unknown finder shape: ' + shape + ', falling back to square', 'warn');
         return 'square';
     }
@@ -260,24 +273,29 @@ class FinderProcessor extends BaseProcessor {
      * Eye-shaped finder pattern (pointed oval/almond shape)
      */
     createEyeShapedFinder(x, y, size) {
+        console.log(`[FinderProcessor] createEyeShapedFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
         const cy = y + size / 2;
-        const rx = size / 2;
-        const ry = size / 3;
+        const rx = size * 0.5;  // Horizontal radius
+        const ry = size * 0.35; // Vertical radius (flatter)
 
-        // Almond/eye shape using bezier curves
-        return `M ${x} ${cy} ` +
-            `Q ${cx} ${y} ${x + size} ${cy} ` +
-            `Q ${cx} ${y + size} ${x} ${cy} Z`;
+        // Eye/almond shape using cubic bezier for smoother curves
+        const path = `M ${x} ${cy} ` +
+            `C ${x} ${cy - ry} ${cx - rx * 0.5} ${y + size * 0.1} ${cx} ${y + size * 0.1} ` +
+            `C ${cx + rx * 0.5} ${y + size * 0.1} ${x + size} ${cy - ry} ${x + size} ${cy} ` +
+            `C ${x + size} ${cy + ry} ${cx + rx * 0.5} ${y + size * 0.9} ${cx} ${y + size * 0.9} ` +
+            `C ${cx - rx * 0.5} ${y + size * 0.9} ${x} ${cy + ry} ${x} ${cy} Z`;
+        return path;
     }
 
     /**
      * Octagon finder pattern
      */
     createOctagonFinder(x, y, size) {
-        const cut = size * 0.3; // Corner cut amount
+        console.log(`[FinderProcessor] createOctagonFinder called: x=${x}, y=${y}, size=${size}`);
+        const cut = size * 0.29; // Corner cut amount (about 1/3)
 
-        return `M ${x + cut} ${y} ` +
+        const path = `M ${x + cut} ${y} ` +
             `L ${x + size - cut} ${y} ` +
             `L ${x + size} ${y + cut} ` +
             `L ${x + size} ${y + size - cut} ` +
@@ -285,83 +303,77 @@ class FinderProcessor extends BaseProcessor {
             `L ${x + cut} ${y + size} ` +
             `L ${x} ${y + size - cut} ` +
             `L ${x} ${y + cut} Z`;
+        return path;
     }
 
     /**
-     * Whirlpool finder pattern (spiral-like rounded shape)
+     * Whirlpool finder pattern (rounded square with slight rotation effect)
      */
     createWhirlpoolFinder(x, y, size) {
+        console.log(`[FinderProcessor] createWhirlpoolFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
         const cy = y + size / 2;
-        const r = size / 2;
-        const offset = size * 0.15; // Spiral offset
+        const r = size * 0.45;
+        const twist = size * 0.08; // Amount of twist
 
-        // Create a swirl effect with offset arcs
-        return `M ${cx - r + offset} ${cy - offset} ` +
-            `A ${r * 0.9} ${r * 0.9} 0 0 1 ${cx + offset} ${cy - r + offset} ` +
-            `A ${r * 0.9} ${r * 0.9} 0 0 1 ${cx + r - offset} ${cy + offset} ` +
-            `A ${r * 0.9} ${r * 0.9} 0 0 1 ${cx - offset} ${cy + r - offset} ` +
-            `A ${r * 0.9} ${r * 0.9} 0 0 1 ${cx - r + offset} ${cy - offset} Z`;
+        // Create a twisted rounded square effect
+        const path = `M ${cx - r} ${cy - twist} ` +
+            `Q ${cx - twist} ${cy - r} ${cx + twist} ${cy - r} ` +
+            `Q ${cx + r} ${cy - twist} ${cx + r} ${cy + twist} ` +
+            `Q ${cx + twist} ${cy + r} ${cx - twist} ${cy + r} ` +
+            `Q ${cx - r} ${cy + twist} ${cx - r} ${cy - twist} Z`;
+        return path;
     }
 
     /**
      * Water-drop finder pattern (teardrop shape)
      */
     createWaterDropFinder(x, y, size) {
+        console.log(`[FinderProcessor] createWaterDropFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
-        const bottom = y + size;
-        const r = size * 0.4;
+        const r = size * 0.38;
 
         // Teardrop: pointed at top, rounded at bottom
-        return `M ${cx} ${y} ` +
-            `Q ${x + size} ${y + size * 0.5} ${x + size * 0.85} ${y + size * 0.7} ` +
-            `A ${r} ${r} 0 1 1 ${x + size * 0.15} ${y + size * 0.7} ` +
-            `Q ${x} ${y + size * 0.5} ${cx} ${y} Z`;
+        const path = `M ${cx} ${y + size * 0.05} ` +
+            `C ${x + size * 0.85} ${y + size * 0.25} ${x + size * 0.95} ${y + size * 0.55} ${x + size * 0.75} ${y + size * 0.75} ` +
+            `A ${r} ${r} 0 1 1 ${x + size * 0.25} ${y + size * 0.75} ` +
+            `C ${x + size * 0.05} ${y + size * 0.55} ${x + size * 0.15} ${y + size * 0.25} ${cx} ${y + size * 0.05} Z`;
+        return path;
     }
 
     /**
-     * Zigzag finder pattern (square with zigzag edges)
+     * Zigzag finder pattern (square with notched corners)
      */
     createZigzagFinder(x, y, size) {
-        const zigSize = size / 6; // Size of each zig
-        let path = `M ${x} ${y} `;
+        console.log(`[FinderProcessor] createZigzagFinder called: x=${x}, y=${y}, size=${size}`);
+        const notch = size * 0.15; // Notch size
 
-        // Top edge zigzag
-        for (let i = 0; i < 3; i++) {
-            const baseX = x + (i * 2 * zigSize);
-            path += `L ${baseX + zigSize} ${y + zigSize} L ${baseX + 2 * zigSize} ${y} `;
-        }
-
-        // Right edge zigzag
-        for (let i = 0; i < 3; i++) {
-            const baseY = y + (i * 2 * zigSize);
-            path += `L ${x + size - zigSize} ${baseY + zigSize} L ${x + size} ${baseY + 2 * zigSize} `;
-        }
-
-        // Bottom edge zigzag (reverse)
-        for (let i = 2; i >= 0; i--) {
-            const baseX = x + (i * 2 * zigSize);
-            path += `L ${baseX + zigSize} ${y + size - zigSize} L ${baseX} ${y + size} `;
-        }
-
-        // Left edge zigzag (reverse)
-        for (let i = 2; i >= 0; i--) {
-            const baseY = y + (i * 2 * zigSize);
-            path += `L ${x + zigSize} ${baseY + zigSize} L ${x} ${baseY} `;
-        }
-
-        return path + 'Z';
+        // Simplified zigzag - square with notched/stepped corners
+        const path = `M ${x + notch} ${y} ` +
+            `L ${x + size - notch} ${y} ` +
+            `L ${x + size - notch} ${y + notch} ` +
+            `L ${x + size} ${y + notch} ` +
+            `L ${x + size} ${y + size - notch} ` +
+            `L ${x + size - notch} ${y + size - notch} ` +
+            `L ${x + size - notch} ${y + size} ` +
+            `L ${x + notch} ${y + size} ` +
+            `L ${x + notch} ${y + size - notch} ` +
+            `L ${x} ${y + size - notch} ` +
+            `L ${x} ${y + notch} ` +
+            `L ${x + notch} ${y + notch} Z`;
+        return path;
     }
 
     /**
-     * Circle-dots finder pattern (circle made of small dots)
+     * Circle-dots finder pattern (dotted circle outline)
      */
     createCircleDotsFinder(x, y, size) {
+        console.log(`[FinderProcessor] createCircleDotsFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
         const cy = y + size / 2;
-        const mainR = size / 2 * 0.85;
-        const dotR = size * 0.08;
-        const numDots = 12;
+        const mainR = size * 0.42;
+        const dotR = size * 0.09;
+        const numDots = 8; // Fewer dots for cleaner look
 
         let path = '';
         for (let i = 0; i < numDots; i++) {
@@ -369,13 +381,13 @@ class FinderProcessor extends BaseProcessor {
             const dotX = cx + mainR * Math.cos(angle);
             const dotY = cy + mainR * Math.sin(angle);
 
-            // Each dot is a small circle
+            // Each dot is a small circle using arc commands
             path += `M ${dotX - dotR} ${dotY} ` +
-                `A ${dotR} ${dotR} 0 1 1 ${dotX + dotR} ${dotY} ` +
-                `A ${dotR} ${dotR} 0 1 1 ${dotX - dotR} ${dotY} `;
+                `A ${dotR} ${dotR} 0 1 0 ${dotX + dotR} ${dotY} ` +
+                `A ${dotR} ${dotR} 0 1 0 ${dotX - dotR} ${dotY} `;
         }
 
-        return path;
+        return path || this.createCircleFinder(x, y, size); // Fallback
     }
 
     // ========================================
@@ -471,19 +483,24 @@ class FinderProcessor extends BaseProcessor {
      * Eye-shaped dot (pointed oval/almond)
      */
     createEyeShapedDot(x, y, size) {
+        console.log(`[FinderProcessor] createEyeShapedDot called`);
         const cx = x + size / 2;
         const cy = y + size / 2;
+        const rx = size * 0.45;
+        const ry = size * 0.3;
 
-        return `M ${x} ${cy} ` +
-            `Q ${cx} ${y} ${x + size} ${cy} ` +
-            `Q ${cx} ${y + size} ${x} ${cy} Z`;
+        // Simpler eye shape using quadratic curves
+        return `M ${x + size * 0.05} ${cy} ` +
+            `Q ${cx} ${y + size * 0.15} ${x + size * 0.95} ${cy} ` +
+            `Q ${cx} ${y + size * 0.85} ${x + size * 0.05} ${cy} Z`;
     }
 
     /**
      * Octagon dot
      */
     createOctagonDot(x, y, size) {
-        const cut = size * 0.3;
+        console.log(`[FinderProcessor] createOctagonDot called`);
+        const cut = size * 0.28;
 
         return `M ${x + cut} ${y} ` +
             `L ${x + size - cut} ${y} ` +
@@ -496,45 +513,58 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Whirlpool dot (spiral-like)
+     * Whirlpool dot (twisted rounded shape)
      */
     createWhirlpoolDot(x, y, size) {
+        console.log(`[FinderProcessor] createWhirlpoolDot called`);
         const cx = x + size / 2;
         const cy = y + size / 2;
-        const r = size / 2 * 0.9;
-        const offset = size * 0.1;
+        const r = size * 0.4;
+        const twist = size * 0.06;
 
-        return `M ${cx - r + offset} ${cy - offset} ` +
-            `A ${r * 0.85} ${r * 0.85} 0 0 1 ${cx + offset} ${cy - r + offset} ` +
-            `A ${r * 0.85} ${r * 0.85} 0 0 1 ${cx + r - offset} ${cy + offset} ` +
-            `A ${r * 0.85} ${r * 0.85} 0 0 1 ${cx - offset} ${cy + r - offset} ` +
-            `A ${r * 0.85} ${r * 0.85} 0 0 1 ${cx - r + offset} ${cy - offset} Z`;
+        // Twisted rounded square
+        return `M ${cx - r} ${cy - twist} ` +
+            `Q ${cx - twist} ${cy - r} ${cx + twist} ${cy - r} ` +
+            `Q ${cx + r} ${cy - twist} ${cx + r} ${cy + twist} ` +
+            `Q ${cx + twist} ${cy + r} ${cx - twist} ${cy + r} ` +
+            `Q ${cx - r} ${cy + twist} ${cx - r} ${cy - twist} Z`;
     }
 
     /**
      * Water-drop dot (teardrop)
      */
     createWaterDropDot(x, y, size) {
+        console.log(`[FinderProcessor] createWaterDropDot called`);
         const cx = x + size / 2;
-        const r = size * 0.35;
+        const r = size * 0.32;
 
-        return `M ${cx} ${y + size * 0.1} ` +
-            `Q ${x + size * 0.9} ${y + size * 0.5} ${x + size * 0.8} ${y + size * 0.65} ` +
-            `A ${r} ${r} 0 1 1 ${x + size * 0.2} ${y + size * 0.65} ` +
-            `Q ${x + size * 0.1} ${y + size * 0.5} ${cx} ${y + size * 0.1} Z`;
+        // Simpler teardrop shape
+        return `M ${cx} ${y + size * 0.08} ` +
+            `C ${x + size * 0.85} ${y + size * 0.3} ${x + size * 0.9} ${y + size * 0.6} ${x + size * 0.7} ${y + size * 0.78} ` +
+            `A ${r} ${r} 0 1 1 ${x + size * 0.3} ${y + size * 0.78} ` +
+            `C ${x + size * 0.1} ${y + size * 0.6} ${x + size * 0.15} ${y + size * 0.3} ${cx} ${y + size * 0.08} Z`;
     }
 
     /**
-     * Zigzag dot (smaller zigzag pattern)
+     * Zigzag dot (square with notched corners)
      */
     createZigzagDot(x, y, size) {
-        const zigSize = size / 4;
+        console.log(`[FinderProcessor] createZigzagDot called`);
+        const notch = size * 0.18;
 
-        return `M ${x} ${y} ` +
-            `L ${x + zigSize} ${y + zigSize} L ${x + 2 * zigSize} ${y} L ${x + 3 * zigSize} ${y + zigSize} L ${x + size} ${y} ` +
-            `L ${x + size - zigSize} ${y + zigSize} L ${x + size} ${y + 2 * zigSize} L ${x + size - zigSize} ${y + 3 * zigSize} L ${x + size} ${y + size} ` +
-            `L ${x + 3 * zigSize} ${y + size - zigSize} L ${x + 2 * zigSize} ${y + size} L ${x + zigSize} ${y + size - zigSize} L ${x} ${y + size} ` +
-            `L ${x + zigSize} ${y + 3 * zigSize} L ${x} ${y + 2 * zigSize} L ${x + zigSize} ${y + zigSize} Z`;
+        // Simplified zigzag - square with notched/stepped corners
+        return `M ${x + notch} ${y} ` +
+            `L ${x + size - notch} ${y} ` +
+            `L ${x + size - notch} ${y + notch} ` +
+            `L ${x + size} ${y + notch} ` +
+            `L ${x + size} ${y + size - notch} ` +
+            `L ${x + size - notch} ${y + size - notch} ` +
+            `L ${x + size - notch} ${y + size} ` +
+            `L ${x + notch} ${y + size} ` +
+            `L ${x + notch} ${y + size - notch} ` +
+            `L ${x} ${y + size - notch} ` +
+            `L ${x} ${y + notch} ` +
+            `L ${x + notch} ${y + notch} Z`;
     }
 
     // ========================================
