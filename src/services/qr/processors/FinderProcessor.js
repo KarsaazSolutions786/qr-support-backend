@@ -305,9 +305,14 @@ class FinderProcessor extends BaseProcessor {
                 return this.createSquareFinder(x, y, size);
             }
 
-            const scale = size / 700;
+            // Laravel viewBox is 700x700, apply shape-specific scale if defined
+            const viewBoxSize = 700;
+            const baseScale = size / viewBoxSize;
+            const shapeScale = config.scale || 1.0;
+            const finalScale = baseScale * shapeScale;
+
             // Default transform: move to x,y and scale
-            let transform = `translate(${x},${y}) scale(${scale})`;
+            let transform = `translate(${x},${y}) scale(${finalScale})`;
 
             // If shape requires flipping (like some asymmetrical patterns in Laravel)
             if (config.shouldFlip) {
@@ -315,7 +320,7 @@ class FinderProcessor extends BaseProcessor {
                 // 1. Move to (x,y)
                 // 2. Move by width (size, 0)
                 // 3. Scale by (-1, 1) * original_scale
-                transform = `translate(${x + size},${y}) scale(-${scale},${scale})`;
+                transform = `translate(${x + size},${y}) scale(-${finalScale},${finalScale})`;
             }
 
             return {
@@ -356,11 +361,25 @@ class FinderProcessor extends BaseProcessor {
             // But LaravelPath.dots usually has specific ones. 
             // In LaravelPaths.js I populated 'dots' specifically.
 
-            const scale = size / 700;
-            let transform = `translate(${x},${y}) scale(${scale})`;
+            // Laravel viewBox is 700x700, apply shape-specific scale if defined
+            const viewBoxSize = 700;
+            const baseScale = size / viewBoxSize;
+            const shapeScale = (config && config.scale) || 1.0;
+            const finalScale = baseScale * shapeScale;
+
+            // IMPORTANT: Dot paths in Laravel are centered at viewBox center (350,350)
+            // not at (0,0). To center the dot in the target area, we need to:
+            // 1. translate(x, y) - move to target position  
+            // 2. translate(size/2, size/2) - move to center of target area
+            // 3. scale(finalScale) - scale down from 700x700
+            // 4. translate(-350, -350) - center the viewBox content
+
+            const viewBoxCenter = viewBoxSize / 2; // 350
+
+            let transform = `translate(${x + size / 2},${y + size / 2}) scale(${finalScale}) translate(-${viewBoxCenter},-${viewBoxCenter})`;
 
             if (config && config.shouldFlip) {
-                transform = `translate(${x + size},${y}) scale(-${scale},${scale})`;
+                transform = `translate(${x + size / 2},${y + size / 2}) scale(-${finalScale},${finalScale}) translate(-${viewBoxCenter},-${viewBoxCenter})`;
             }
 
             // Careful: if config wasn't found in dots but used finder fallback, it might be large. 
