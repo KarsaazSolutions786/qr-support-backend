@@ -93,6 +93,8 @@ class ModuleProcessor extends BaseProcessor {
     async process(payload) {
         const { design, qrMatrix, moduleSize, startX, startY } = payload;
 
+        console.log(`[ModuleProcessor] process called with design.module: ${design.module}, design.moduleShape: ${design.moduleShape}`);
+
         // Get module shape
         const shape = this.normalizeShape(design.module || design.moduleShape || 'square');
 
@@ -100,6 +102,7 @@ class ModuleProcessor extends BaseProcessor {
         payload.moduleShape = shape;
         payload.modulePathGenerator = this.getPathGenerator(shape);
 
+        console.log(`[ModuleProcessor] Final module shape: ${shape}, generator exists: ${!!payload.modulePathGenerator}`);
         this.log(`Module shape set to: ${shape}`);
 
         return payload;
@@ -151,6 +154,10 @@ class ModuleProcessor extends BaseProcessor {
      */
     generateModulePath(shape, x, y, size, context = {}) {
         const generator = this.getPathGenerator(shape);
+        if (!generator) {
+            console.error(`[ModuleProcessor] No generator found for shape: ${shape}, falling back to square`);
+            return this.createSquare(x, y, size, context);
+        }
         return generator(x, y, size, context);
     }
 
@@ -385,13 +392,16 @@ class ModuleProcessor extends BaseProcessor {
      * Triangle-end module (pointing right, like an arrow/chevron)
      */
     createTriangleEnd(x, y, size, context = {}) {
-        const padding = size * 0.08;
+        console.log(`[ModuleProcessor] createTriangleEnd called: x=${x}, y=${y}, size=${size}`);
+        const pad = size * 0.05;
         const cy = y + size / 2;
 
-        // Arrow pointing right - more visible shape
-        return `M ${x + padding} ${y + padding} ` +
-            `L ${x + size - padding} ${cy} ` +
-            `L ${x + padding} ${y + size - padding} Z`;
+        // Arrow pointing right - clear chevron shape
+        const path = `M ${x + pad} ${y + pad} ` +
+            `L ${x + size - pad} ${cy} ` +
+            `L ${x + pad} ${y + size - pad} Z`;
+        console.log(`[ModuleProcessor] createTriangleEnd path: ${path}`);
+        return path;
     }
 
     /**
@@ -446,62 +456,67 @@ class ModuleProcessor extends BaseProcessor {
      * Roundness module (very rounded square, almost pill-shaped)
      */
     createRoundness(x, y, size, context = {}) {
+        console.log(`[ModuleProcessor] createRoundness called: x=${x}, y=${y}, size=${size}`);
         // Create an almost-circular rounded rectangle
         const padding = size * 0.05;
         const innerSize = size - padding * 2;
         const r = innerSize * 0.48; // Almost circular
-        return this.createRoundedRect(x + padding, y + padding, innerSize, innerSize, r);
+        const path = this.createRoundedRect(x + padding, y + padding, innerSize, innerSize, r);
+        console.log(`[ModuleProcessor] createRoundness path: ${path.substring(0, 50)}...`);
+        return path;
     }
 
     /**
      * Two triangles with circle module
-     * Top triangle pointing up, bottom triangle pointing down, circle in center
+     * Top triangle pointing down, bottom triangle pointing up, with circle in center
      */
     createTwoTrianglesWithCircle(x, y, size, context = {}) {
+        console.log(`[ModuleProcessor] createTwoTrianglesWithCircle called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
         const cy = y + size / 2;
         const pad = size * 0.05;
 
-        // Circle in center
-        const circleR = size * 0.15;
+        // Circle in center - make it more visible
+        const circleR = size * 0.18;
         const circle = `M ${cx - circleR} ${cy} A ${circleR} ${circleR} 0 1 1 ${cx + circleR} ${cy} A ${circleR} ${circleR} 0 1 1 ${cx - circleR} ${cy}`;
 
-        // Top triangle - apex at top, base near center
-        const topApex = y + pad;
-        const topBaseY = cy - circleR - pad;
-        const topTriangle = `M ${cx} ${topApex} L ${x + size - pad} ${topBaseY} L ${x + pad} ${topBaseY} Z`;
+        // Top triangle - pointing DOWN toward circle (apex near circle, base at top)
+        const topTriangle = `M ${x + pad} ${y + pad} L ${x + size - pad} ${y + pad} L ${cx} ${cy - circleR - pad * 2} Z`;
 
-        // Bottom triangle - apex at bottom, base near center
-        const bottomApex = y + size - pad;
-        const bottomBaseY = cy + circleR + pad;
-        const bottomTriangle = `M ${cx} ${bottomApex} L ${x + size - pad} ${bottomBaseY} L ${x + pad} ${bottomBaseY} Z`;
+        // Bottom triangle - pointing UP toward circle (apex near circle, base at bottom)
+        const bottomTriangle = `M ${x + pad} ${y + size - pad} L ${x + size - pad} ${y + size - pad} L ${cx} ${cy + circleR + pad * 2} Z`;
 
-        return `${circle} ${topTriangle} ${bottomTriangle}`;
+        const path = `${circle} ${topTriangle} ${bottomTriangle}`;
+        console.log(`[ModuleProcessor] createTwoTrianglesWithCircle generated path`);
+        return path;
     }
 
     /**
-     * Four triangles module - pinwheel style
-     * Four triangles meeting at the center, each with base on an edge
+     * Four triangles module - pinwheel/windmill style with visible gaps
+     * Four separate triangles pointing inward from corners with gaps between them
      */
     createFourTriangles(x, y, size, context = {}) {
+        console.log(`[ModuleProcessor] createFourTriangles called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
         const cy = y + size / 2;
-        const pad = size * 0.05;
+        const gap = size * 0.12; // Gap between triangles for visual distinction
 
-        // Each triangle has its base along one edge and apex at center
-        // Top triangle - base at top edge, apex at center
-        const top = `M ${x + pad} ${y + pad} L ${x + size - pad} ${y + pad} L ${cx} ${cy} Z`;
+        // Four triangles from corners pointing toward center (with gap)
+        // Top-left triangle
+        const tl = `M ${x} ${y} L ${cx - gap} ${y} L ${x} ${cy - gap} Z`;
 
-        // Right triangle - base at right edge, apex at center
-        const right = `M ${x + size - pad} ${y + pad} L ${x + size - pad} ${y + size - pad} L ${cx} ${cy} Z`;
+        // Top-right triangle
+        const tr = `M ${x + size} ${y} L ${x + size} ${cy - gap} L ${cx + gap} ${y} Z`;
 
-        // Bottom triangle - base at bottom edge, apex at center
-        const bottom = `M ${x + size - pad} ${y + size - pad} L ${x + pad} ${y + size - pad} L ${cx} ${cy} Z`;
+        // Bottom-right triangle
+        const br = `M ${x + size} ${y + size} L ${cx + gap} ${y + size} L ${x + size} ${cy + gap} Z`;
 
-        // Left triangle - base at left edge, apex at center
-        const left = `M ${x + pad} ${y + size - pad} L ${x + pad} ${y + pad} L ${cx} ${cy} Z`;
+        // Bottom-left triangle
+        const bl = `M ${x} ${y + size} L ${x} ${cy + gap} L ${cx - gap} ${y + size} Z`;
 
-        return `${top} ${right} ${bottom} ${left}`;
+        const path = `${tl} ${tr} ${br} ${bl}`;
+        console.log(`[ModuleProcessor] createFourTriangles generated 4 corner triangles`);
+        return path;
     }
 
     // ========================================

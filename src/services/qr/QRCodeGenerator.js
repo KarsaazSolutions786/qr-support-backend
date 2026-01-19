@@ -311,9 +311,12 @@ class QRCodeGenerator {
         const moduleShape = payload.moduleShape || design.module || 'square';
         const paths = [];
 
+        console.log(`[QRCodeGenerator] buildSVG using moduleShape: ${moduleShape}`);
+
         // Check if we need neighbor context (for classy shapes)
         const needsContext = ['classy', 'classy-rounded', 'classyRounded'].includes(moduleShape);
 
+        let moduleCount = 0;
         for (let row = 0; row < qrMatrix.size; row++) {
             for (let col = 0; col < qrMatrix.size; col++) {
                 if (qrMatrix.matrix[row][col]) {
@@ -333,10 +336,17 @@ class QRCodeGenerator {
                         // Generate module path using ModuleProcessor
                         const pathData = this.moduleProcessor.generateModulePath(moduleShape, x, y, moduleSize, context);
                         paths.push(pathData);
+                        moduleCount++;
+
+                        // Log first path to verify shape is correct
+                        if (moduleCount === 1) {
+                            console.log(`[QRCodeGenerator] First module path (${moduleShape}): ${pathData.substring(0, 100)}...`);
+                        }
                     }
                 }
             }
         }
+        console.log(`[QRCodeGenerator] Generated ${moduleCount} module paths`);
 
         // Add all regular modules as a single path
         if (paths.length > 0) {
