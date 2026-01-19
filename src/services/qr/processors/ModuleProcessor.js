@@ -59,13 +59,20 @@ class ModuleProcessor extends BaseProcessor {
             // New shapes
             'triangle': this.createTriangle.bind(this),
             'triangle-end': this.createTriangleEnd.bind(this),
+            'triangleEnd': this.createTriangleEnd.bind(this),
+            'triangleend': this.createTriangleEnd.bind(this),
             'fish': this.createFish.bind(this),
             'tree': this.createTree.bind(this),
             'roundness': this.createRoundness.bind(this),
+            // Two triangles with circle (all variations)
             'twoTrianglesWithCircle': this.createTwoTrianglesWithCircle.bind(this),
             'twotriangleswithcircle': this.createTwoTrianglesWithCircle.bind(this),
+            'two-triangles-with-circle': this.createTwoTrianglesWithCircle.bind(this),
+            // Four triangles (all variations)
             'fourTriangles': this.createFourTriangles.bind(this),
             'fourtriangles': this.createFourTriangles.bind(this),
+            'four-triangles': this.createFourTriangles.bind(this),
+            '4-triangles': this.createFourTriangles.bind(this),
         };
     }
 
@@ -110,10 +117,17 @@ class ModuleProcessor extends BaseProcessor {
 
         // Check if shape is supported
         if (this.shapes[normalized]) {
+            this.log(`Module shape resolved: ${shape} → ${normalized}`);
             return normalized;
         }
 
-        this.log(`Unknown module shape: ${shape}, falling back to square`, 'warn');
+        // Try original value as fallback (for camelCase values already in map)
+        if (this.shapes[shape]) {
+            this.log(`Module shape resolved (direct match): ${shape}`);
+            return shape;
+        }
+
+        this.log(`Unknown module shape: ${shape} (normalized: ${normalized}), falling back to square`, 'warn');
         return 'square';
     }
 
@@ -368,12 +382,13 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Triangle-end module (pointing right, like an arrow)
+     * Triangle-end module (pointing right, like an arrow/chevron)
      */
     createTriangleEnd(x, y, size, context = {}) {
-        const padding = size * 0.1;
+        const padding = size * 0.08;
         const cy = y + size / 2;
 
+        // Arrow pointing right - more visible shape
         return `M ${x + padding} ${y + padding} ` +
             `L ${x + size - padding} ${cy} ` +
             `L ${x + padding} ${y + size - padding} Z`;
@@ -431,65 +446,60 @@ class ModuleProcessor extends BaseProcessor {
      * Roundness module (very rounded square, almost pill-shaped)
      */
     createRoundness(x, y, size, context = {}) {
-        const r = size * 0.45; // Very large corner radius
-        return this.createRoundedRect(x, y, size, size, r);
+        // Create an almost-circular rounded rectangle
+        const padding = size * 0.05;
+        const innerSize = size - padding * 2;
+        const r = innerSize * 0.48; // Almost circular
+        return this.createRoundedRect(x + padding, y + padding, innerSize, innerSize, r);
     }
 
     /**
      * Two triangles with circle module
+     * Top triangle pointing up, bottom triangle pointing down, circle in center
      */
     createTwoTrianglesWithCircle(x, y, size, context = {}) {
         const cx = x + size / 2;
         const cy = y + size / 2;
+        const pad = size * 0.05;
+
+        // Circle in center
         const circleR = size * 0.15;
-        const triangleSize = size * 0.35;
+        const circle = `M ${cx - circleR} ${cy} A ${circleR} ${circleR} 0 1 1 ${cx + circleR} ${cy} A ${circleR} ${circleR} 0 1 1 ${cx - circleR} ${cy}`;
 
-        // Top triangle pointing up
-        const topTriangle = `M ${cx} ${y + size * 0.1} ` +
-            `L ${cx + triangleSize * 0.5} ${y + size * 0.1 + triangleSize * 0.7} ` +
-            `L ${cx - triangleSize * 0.5} ${y + size * 0.1 + triangleSize * 0.7} Z`;
+        // Top triangle - apex at top, base near center
+        const topApex = y + pad;
+        const topBaseY = cy - circleR - pad;
+        const topTriangle = `M ${cx} ${topApex} L ${x + size - pad} ${topBaseY} L ${x + pad} ${topBaseY} Z`;
 
-        // Bottom triangle pointing down
-        const bottomTriangle = `M ${cx} ${y + size * 0.9} ` +
-            `L ${cx + triangleSize * 0.5} ${y + size * 0.9 - triangleSize * 0.7} ` +
-            `L ${cx - triangleSize * 0.5} ${y + size * 0.9 - triangleSize * 0.7} Z`;
+        // Bottom triangle - apex at bottom, base near center
+        const bottomApex = y + size - pad;
+        const bottomBaseY = cy + circleR + pad;
+        const bottomTriangle = `M ${cx} ${bottomApex} L ${x + size - pad} ${bottomBaseY} L ${x + pad} ${bottomBaseY} Z`;
 
-        // Center circle
-        const circle = `M ${cx - circleR} ${cy} ` +
-            `A ${circleR} ${circleR} 0 1 1 ${cx + circleR} ${cy} ` +
-            `A ${circleR} ${circleR} 0 1 1 ${cx - circleR} ${cy}`;
-
-        return `${topTriangle} ${bottomTriangle} ${circle}`;
+        return `${circle} ${topTriangle} ${bottomTriangle}`;
     }
 
     /**
-     * Four triangles module (pointing inward from each side)
+     * Four triangles module - pinwheel style
+     * Four triangles meeting at the center, each with base on an edge
      */
     createFourTriangles(x, y, size, context = {}) {
         const cx = x + size / 2;
         const cy = y + size / 2;
-        const triangleDepth = size * 0.35;
-        const triangleWidth = size * 0.3;
+        const pad = size * 0.05;
 
-        // Top triangle (pointing down)
-        const top = `M ${cx} ${y + triangleDepth} ` +
-            `L ${cx + triangleWidth} ${y} ` +
-            `L ${cx - triangleWidth} ${y} Z`;
+        // Each triangle has its base along one edge and apex at center
+        // Top triangle - base at top edge, apex at center
+        const top = `M ${x + pad} ${y + pad} L ${x + size - pad} ${y + pad} L ${cx} ${cy} Z`;
 
-        // Right triangle (pointing left)
-        const right = `M ${x + size - triangleDepth} ${cy} ` +
-            `L ${x + size} ${cy + triangleWidth} ` +
-            `L ${x + size} ${cy - triangleWidth} Z`;
+        // Right triangle - base at right edge, apex at center
+        const right = `M ${x + size - pad} ${y + pad} L ${x + size - pad} ${y + size - pad} L ${cx} ${cy} Z`;
 
-        // Bottom triangle (pointing up)
-        const bottom = `M ${cx} ${y + size - triangleDepth} ` +
-            `L ${cx + triangleWidth} ${y + size} ` +
-            `L ${cx - triangleWidth} ${y + size} Z`;
+        // Bottom triangle - base at bottom edge, apex at center
+        const bottom = `M ${x + size - pad} ${y + size - pad} L ${x + pad} ${y + size - pad} L ${cx} ${cy} Z`;
 
-        // Left triangle (pointing right)
-        const left = `M ${x + triangleDepth} ${cy} ` +
-            `L ${x} ${cy + triangleWidth} ` +
-            `L ${x} ${cy - triangleWidth} Z`;
+        // Left triangle - base at left edge, apex at center
+        const left = `M ${x + pad} ${y + size - pad} L ${x + pad} ${y + pad} L ${cx} ${cy} Z`;
 
         return `${top} ${right} ${bottom} ${left}`;
     }
