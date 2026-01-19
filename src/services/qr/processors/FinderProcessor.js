@@ -189,6 +189,13 @@ class FinderProcessor extends BaseProcessor {
 
     /**
      * Generate complete finder pattern SVG elements
+     *
+     * IMPORTANT: For Laravel ported shapes, the original paths are COMPOUND paths
+     * (donut shapes with inner cutouts built-in). For proper layered rendering:
+     * - outerPath: Solid outer boundary (filled with eye external color)
+     * - innerPath: Solid inner boundary (filled with background to create hollow ring)
+     * - dotPath: Center dot (filled with eye internal color)
+     *
      * @param {string} finderShape
      * @param {string} dotShape
      * @param {number} x - Top-left X
@@ -205,10 +212,84 @@ class FinderProcessor extends BaseProcessor {
         const innerOffset = moduleSize;
         const dotOffset = moduleSize * 2;
 
+        // Get the generator functions
+        const finderGenerator = this.getFinderPathGenerator(finderShape);
+        const dotGenerator = this.getDotPathGenerator(dotShape);
+
+        // Check if this is a Laravel compound path (donut with hole already cut out)
+        const isLaravelCompoundPath = finderGenerator.isLaravelPath;
+
+        if (isLaravelCompoundPath) {
+            // Laravel paths are compound paths with inner cutouts already built-in
+            // We only need to draw the outer (compound) path and the center dot
+            // NO inner path needed (it would create a double-hollow effect)
+            return {
+                outerPath: finderGenerator(x, y, outerSize),
+                innerPath: '', // Empty - the hole is already in the compound path
+                dotPath: dotGenerator(x + dotOffset, y + dotOffset, dotSize),
+            };
+        }
+
+        // Non-Laravel shapes use standard three-layer approach:
+        // 1. Draw outer solid shape (filled with eye color)
+        // 2. Draw inner solid shape (filled with background) → creates hollow ring
+        // 3. Draw center dot (filled with internal color)
         return {
-            outerPath: this.getFinderPathGenerator(finderShape)(x, y, outerSize),
-            innerPath: this.getFinderPathGenerator(finderShape)(x + innerOffset, y + innerOffset, innerSize),
-            dotPath: this.getDotPathGenerator(dotShape)(x + dotOffset, y + dotOffset, dotSize),
+            outerPath: finderGenerator(x, y, outerSize),
+            innerPath: finderGenerator(x + innerOffset, y + innerOffset, innerSize),
+            dotPath: dotGenerator(x + dotOffset, y + dotOffset, dotSize),
+        };
+    }
+
+    /**
+     * Create a SOLID finder path from Laravel compound paths.
+     *
+     * Laravel paths are compound paths (donut shapes) with:
+     * - First subpath: Outer boundary
+     * - Second subpath: Inner cutout boundary
+     *
+     * This method extracts just one solid subpath for proper layered rendering.
+     *
+     * @param {string} shapeName - Laravel shape name
+     * @param {string} part - 'outer' or 'inner'
+     * @returns {Function} - Path generator function (x, y, size) => path
+     */
+    createLaravelFinderSolid(shapeName, part = 'outer') {
+        return (x, y, size) => {
+            const config = LaravelPaths.finders[shapeName];
+            if (!config) {
+                console.warn(`[FinderProcessor] Laravel finder shape '${shapeName}' not found`);
+                return this.createSquareFinder(x, y, size);
+            }
+
+            // Extract the appropriate solid subpath
+            let solidPath;
+            if (part === 'outer') {
+                solidPath = LaravelPaths.getOuterSolidPath(config.path);
+            } else if (part === 'inner') {
+                solidPath = LaravelPaths.getInnerSolidPath(config.path);
+                // If no inner subpath exists (single solid path), use the same shape
+                if (!solidPath) {
+                    solidPath = LaravelPaths.getOuterSolidPath(config.path);
+                }
+            } else {
+                solidPath = config.path;
+            }
+
+            const scale = size / 700;
+            let transform = `translate(${x},${y}) scale(${scale})`;
+
+            // If shape requires flipping (like some asymmetrical patterns in Laravel)
+            if (config.shouldFlip) {
+                transform = `translate(${x + size},${y}) scale(-${scale},${scale})`;
+            }
+
+            return {
+                d: solidPath,
+                attrs: {
+                    transform
+                }
+            };
         };
     }
 
@@ -217,7 +298,7 @@ class FinderProcessor extends BaseProcessor {
      * @param {string} shapeName
      */
     createLaravelFinder(shapeName) {
-        return (x, y, size) => {
+        const generator = (x, y, size) => {
             const config = LaravelPaths.finders[shapeName];
             if (!config) {
                 console.warn(`[FinderProcessor] Laravel finder shape '${shapeName}' not found`);
@@ -244,6 +325,11 @@ class FinderProcessor extends BaseProcessor {
                 }
             };
         };
+
+        // Mark this as a Laravel compound path (donut with hole already cut out)
+        generator.isLaravelPath = true;
+
+        return generator;
     }
 
     /**
@@ -251,7 +337,7 @@ class FinderProcessor extends BaseProcessor {
      * @param {string} shapeName
      */
     createLaravelDot(shapeName) {
-        return (x, y, size) => {
+        const generator = (x, y, size) => {
             const config = LaravelPaths.dots[shapeName] || LaravelPaths.finders[shapeName];
 
             // If dot not found in specific dots or generic finders, use square
@@ -289,6 +375,11 @@ class FinderProcessor extends BaseProcessor {
                 }
             };
         };
+
+        // Mark this as a Laravel path
+        generator.isLaravelPath = true;
+
+        return generator;
     }
 
     // ========================================

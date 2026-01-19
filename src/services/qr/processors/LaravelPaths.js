@@ -1,9 +1,63 @@
 /**
  * Laravel SVG Paths
- * 
+ *
  * Ported from Laravel backend PHP files (App\Support\QRCodeProcessors\FinderProcessors\*)
  * These paths are defined in a 700x700 viewBox coordinate system.
+ *
+ * IMPORTANT: The original Laravel paths are COMPOUND paths (donut shapes with inner cutouts).
+ * For proper layered rendering, we provide:
+ * - `path`: Original compound path (for reference/backward compat)
+ * - `outerSolid`: Solid outer boundary only (for eye external color layer)
+ * - `innerSolid`: Solid inner boundary only (for background color layer)
+ *
+ * Rendering order for correct appearance:
+ * 1. Draw outerSolid with eye external color (solid fill)
+ * 2. Draw innerSolid with background color (creates the hollow ring effect)
+ * 3. Draw dot with eye internal color (center)
  */
+
+/**
+ * Splits a compound SVG path into its subpaths.
+ * Compound paths have multiple M...z segments that create cutouts with evenodd fill rule.
+ * @param {string} path - The compound path string
+ * @returns {string[]} - Array of individual subpaths
+ */
+function splitCompoundPath(path) {
+    if (!path) return [];
+
+    // Split on 'M' or 'm' but keep the M/m at start of each segment
+    // First, normalize: replace 'Z m' or 'z M' patterns with consistent separators
+    const normalized = path
+        .replace(/Z\s+m/gi, 'Z|||m')
+        .replace(/z\s+M/gi, 'z|||M')
+        .replace(/Z\s+M/gi, 'Z|||M')
+        .replace(/z\s+m/gi, 'z|||m');
+
+    const parts = normalized.split('|||').filter(p => p.trim().length > 0);
+    return parts;
+}
+
+/**
+ * Extracts the outer solid path from a compound path.
+ * For Laravel QR paths, the first subpath is typically the outer boundary.
+ * @param {string} compoundPath
+ * @returns {string}
+ */
+function getOuterSolidPath(compoundPath) {
+    const parts = splitCompoundPath(compoundPath);
+    return parts[0] || compoundPath;
+}
+
+/**
+ * Extracts the inner solid path from a compound path.
+ * For Laravel QR paths, the second subpath is typically the inner cutout boundary.
+ * @param {string} compoundPath
+ * @returns {string|null}
+ */
+function getInnerSolidPath(compoundPath) {
+    const parts = splitCompoundPath(compoundPath);
+    return parts[1] || null;
+}
 
 const LaravelPaths = {
     finders: {
@@ -75,5 +129,10 @@ const LaravelPaths = {
         }
     }
 };
+
+// Export helper functions along with paths
+LaravelPaths.splitCompoundPath = splitCompoundPath;
+LaravelPaths.getOuterSolidPath = getOuterSolidPath;
+LaravelPaths.getInnerSolidPath = getInnerSolidPath;
 
 module.exports = LaravelPaths;
