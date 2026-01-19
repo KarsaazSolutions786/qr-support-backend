@@ -12,18 +12,29 @@
  * Supported finder shapes:
  * - square (default)
  * - circle / dot
- * - rounded
+ * - rounded / rounded-corners
  * - extra-rounded
  * - leaf
  * - diamond / rhombus
+ * - eye-shaped
+ * - octagon
+ * - whirlpool
+ * - water-drop
+ * - zigzag
+ * - circle-dots
  *
  * Supported finder dot shapes:
  * - square (default)
  * - circle / dot
- * - rounded
+ * - rounded / rounded-corners
  * - diamond / rhombus
  * - star
  * - heart
+ * - eye-shaped
+ * - octagon
+ * - whirlpool
+ * - water-drop
+ * - zigzag
  */
 const BaseProcessor = require('./BaseProcessor');
 
@@ -34,26 +45,50 @@ class FinderProcessor extends BaseProcessor {
         // Map of supported finder shapes
         this.finderShapes = {
             'square': this.createSquareFinder.bind(this),
+            'default': this.createSquareFinder.bind(this),
             'circle': this.createCircleFinder.bind(this),
             'dot': this.createCircleFinder.bind(this),
             'rounded': this.createRoundedFinder.bind(this),
+            'rounded-corners': this.createRoundedFinder.bind(this),
+            'roundedCorners': this.createRoundedFinder.bind(this),
             'extra-rounded': this.createExtraRoundedFinder.bind(this),
             'extraRounded': this.createExtraRoundedFinder.bind(this),
             'leaf': this.createLeafFinder.bind(this),
             'diamond': this.createDiamondFinder.bind(this),
             'rhombus': this.createDiamondFinder.bind(this),
+            // New shapes
+            'eye-shaped': this.createEyeShapedFinder.bind(this),
+            'eyeShaped': this.createEyeShapedFinder.bind(this),
+            'octagon': this.createOctagonFinder.bind(this),
+            'whirlpool': this.createWhirlpoolFinder.bind(this),
+            'water-drop': this.createWaterDropFinder.bind(this),
+            'waterDrop': this.createWaterDropFinder.bind(this),
+            'zigzag': this.createZigzagFinder.bind(this),
+            'circle-dots': this.createCircleDotsFinder.bind(this),
+            'circleDots': this.createCircleDotsFinder.bind(this),
         };
 
         // Map of supported finder dot shapes
         this.dotShapes = {
             'square': this.createSquareDot.bind(this),
+            'default': this.createSquareDot.bind(this),
             'circle': this.createCircleDot.bind(this),
             'dot': this.createCircleDot.bind(this),
             'rounded': this.createRoundedDot.bind(this),
+            'rounded-corners': this.createRoundedDot.bind(this),
+            'roundedCorners': this.createRoundedDot.bind(this),
             'diamond': this.createDiamondDot.bind(this),
             'rhombus': this.createDiamondDot.bind(this),
             'star': this.createStarDot.bind(this),
             'heart': this.createHeartDot.bind(this),
+            // New shapes
+            'eye-shaped': this.createEyeShapedDot.bind(this),
+            'eyeShaped': this.createEyeShapedDot.bind(this),
+            'octagon': this.createOctagonDot.bind(this),
+            'whirlpool': this.createWhirlpoolDot.bind(this),
+            'water-drop': this.createWaterDropDot.bind(this),
+            'waterDrop': this.createWaterDropDot.bind(this),
+            'zigzag': this.createZigzagDot.bind(this),
         };
     }
 
@@ -221,6 +256,128 @@ class FinderProcessor extends BaseProcessor {
             'L ' + x + ' ' + cy + ' Z';
     }
 
+    /**
+     * Eye-shaped finder pattern (pointed oval/almond shape)
+     */
+    createEyeShapedFinder(x, y, size) {
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const rx = size / 2;
+        const ry = size / 3;
+
+        // Almond/eye shape using bezier curves
+        return `M ${x} ${cy} ` +
+            `Q ${cx} ${y} ${x + size} ${cy} ` +
+            `Q ${cx} ${y + size} ${x} ${cy} Z`;
+    }
+
+    /**
+     * Octagon finder pattern
+     */
+    createOctagonFinder(x, y, size) {
+        const cut = size * 0.3; // Corner cut amount
+
+        return `M ${x + cut} ${y} ` +
+            `L ${x + size - cut} ${y} ` +
+            `L ${x + size} ${y + cut} ` +
+            `L ${x + size} ${y + size - cut} ` +
+            `L ${x + size - cut} ${y + size} ` +
+            `L ${x + cut} ${y + size} ` +
+            `L ${x} ${y + size - cut} ` +
+            `L ${x} ${y + cut} Z`;
+    }
+
+    /**
+     * Whirlpool finder pattern (spiral-like rounded shape)
+     */
+    createWhirlpoolFinder(x, y, size) {
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const r = size / 2;
+        const offset = size * 0.15; // Spiral offset
+
+        // Create a swirl effect with offset arcs
+        return `M ${cx - r + offset} ${cy - offset} ` +
+            `A ${r * 0.9} ${r * 0.9} 0 0 1 ${cx + offset} ${cy - r + offset} ` +
+            `A ${r * 0.9} ${r * 0.9} 0 0 1 ${cx + r - offset} ${cy + offset} ` +
+            `A ${r * 0.9} ${r * 0.9} 0 0 1 ${cx - offset} ${cy + r - offset} ` +
+            `A ${r * 0.9} ${r * 0.9} 0 0 1 ${cx - r + offset} ${cy - offset} Z`;
+    }
+
+    /**
+     * Water-drop finder pattern (teardrop shape)
+     */
+    createWaterDropFinder(x, y, size) {
+        const cx = x + size / 2;
+        const bottom = y + size;
+        const r = size * 0.4;
+
+        // Teardrop: pointed at top, rounded at bottom
+        return `M ${cx} ${y} ` +
+            `Q ${x + size} ${y + size * 0.5} ${x + size * 0.85} ${y + size * 0.7} ` +
+            `A ${r} ${r} 0 1 1 ${x + size * 0.15} ${y + size * 0.7} ` +
+            `Q ${x} ${y + size * 0.5} ${cx} ${y} Z`;
+    }
+
+    /**
+     * Zigzag finder pattern (square with zigzag edges)
+     */
+    createZigzagFinder(x, y, size) {
+        const zigSize = size / 6; // Size of each zig
+        let path = `M ${x} ${y} `;
+
+        // Top edge zigzag
+        for (let i = 0; i < 3; i++) {
+            const baseX = x + (i * 2 * zigSize);
+            path += `L ${baseX + zigSize} ${y + zigSize} L ${baseX + 2 * zigSize} ${y} `;
+        }
+
+        // Right edge zigzag
+        for (let i = 0; i < 3; i++) {
+            const baseY = y + (i * 2 * zigSize);
+            path += `L ${x + size - zigSize} ${baseY + zigSize} L ${x + size} ${baseY + 2 * zigSize} `;
+        }
+
+        // Bottom edge zigzag (reverse)
+        for (let i = 2; i >= 0; i--) {
+            const baseX = x + (i * 2 * zigSize);
+            path += `L ${baseX + zigSize} ${y + size - zigSize} L ${baseX} ${y + size} `;
+        }
+
+        // Left edge zigzag (reverse)
+        for (let i = 2; i >= 0; i--) {
+            const baseY = y + (i * 2 * zigSize);
+            path += `L ${x + zigSize} ${baseY + zigSize} L ${x} ${baseY} `;
+        }
+
+        return path + 'Z';
+    }
+
+    /**
+     * Circle-dots finder pattern (circle made of small dots)
+     */
+    createCircleDotsFinder(x, y, size) {
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const mainR = size / 2 * 0.85;
+        const dotR = size * 0.08;
+        const numDots = 12;
+
+        let path = '';
+        for (let i = 0; i < numDots; i++) {
+            const angle = (i * 2 * Math.PI / numDots) - Math.PI / 2;
+            const dotX = cx + mainR * Math.cos(angle);
+            const dotY = cy + mainR * Math.sin(angle);
+
+            // Each dot is a small circle
+            path += `M ${dotX - dotR} ${dotY} ` +
+                `A ${dotR} ${dotR} 0 1 1 ${dotX + dotR} ${dotY} ` +
+                `A ${dotR} ${dotR} 0 1 1 ${dotX - dotR} ${dotY} `;
+        }
+
+        return path;
+    }
+
     // ========================================
     // Finder Dot Shape Generators (Center)
     // ========================================
@@ -308,6 +465,76 @@ class FinderProcessor extends BaseProcessor {
             'C ' + (cx + size * 0.25) + ' ' + (y + size * 0.05) + ' ' + cx + ' ' + (y + size * 0.15) + ' ' + cx + ' ' + (y + size * 0.25) + ' Z';
 
         return heartPath;
+    }
+
+    /**
+     * Eye-shaped dot (pointed oval/almond)
+     */
+    createEyeShapedDot(x, y, size) {
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+
+        return `M ${x} ${cy} ` +
+            `Q ${cx} ${y} ${x + size} ${cy} ` +
+            `Q ${cx} ${y + size} ${x} ${cy} Z`;
+    }
+
+    /**
+     * Octagon dot
+     */
+    createOctagonDot(x, y, size) {
+        const cut = size * 0.3;
+
+        return `M ${x + cut} ${y} ` +
+            `L ${x + size - cut} ${y} ` +
+            `L ${x + size} ${y + cut} ` +
+            `L ${x + size} ${y + size - cut} ` +
+            `L ${x + size - cut} ${y + size} ` +
+            `L ${x + cut} ${y + size} ` +
+            `L ${x} ${y + size - cut} ` +
+            `L ${x} ${y + cut} Z`;
+    }
+
+    /**
+     * Whirlpool dot (spiral-like)
+     */
+    createWhirlpoolDot(x, y, size) {
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const r = size / 2 * 0.9;
+        const offset = size * 0.1;
+
+        return `M ${cx - r + offset} ${cy - offset} ` +
+            `A ${r * 0.85} ${r * 0.85} 0 0 1 ${cx + offset} ${cy - r + offset} ` +
+            `A ${r * 0.85} ${r * 0.85} 0 0 1 ${cx + r - offset} ${cy + offset} ` +
+            `A ${r * 0.85} ${r * 0.85} 0 0 1 ${cx - offset} ${cy + r - offset} ` +
+            `A ${r * 0.85} ${r * 0.85} 0 0 1 ${cx - r + offset} ${cy - offset} Z`;
+    }
+
+    /**
+     * Water-drop dot (teardrop)
+     */
+    createWaterDropDot(x, y, size) {
+        const cx = x + size / 2;
+        const r = size * 0.35;
+
+        return `M ${cx} ${y + size * 0.1} ` +
+            `Q ${x + size * 0.9} ${y + size * 0.5} ${x + size * 0.8} ${y + size * 0.65} ` +
+            `A ${r} ${r} 0 1 1 ${x + size * 0.2} ${y + size * 0.65} ` +
+            `Q ${x + size * 0.1} ${y + size * 0.5} ${cx} ${y + size * 0.1} Z`;
+    }
+
+    /**
+     * Zigzag dot (smaller zigzag pattern)
+     */
+    createZigzagDot(x, y, size) {
+        const zigSize = size / 4;
+
+        return `M ${x} ${y} ` +
+            `L ${x + zigSize} ${y + zigSize} L ${x + 2 * zigSize} ${y} L ${x + 3 * zigSize} ${y + zigSize} L ${x + size} ${y} ` +
+            `L ${x + size - zigSize} ${y + zigSize} L ${x + size} ${y + 2 * zigSize} L ${x + size - zigSize} ${y + 3 * zigSize} L ${x + size} ${y + size} ` +
+            `L ${x + 3 * zigSize} ${y + size - zigSize} L ${x + 2 * zigSize} ${y + size} L ${x + zigSize} ${y + size - zigSize} L ${x} ${y + size} ` +
+            `L ${x + zigSize} ${y + 3 * zigSize} L ${x} ${y + 2 * zigSize} L ${x + zigSize} ${y + zigSize} Z`;
     }
 
     // ========================================
@@ -416,13 +643,21 @@ class FinderProcessor extends BaseProcessor {
     static getSupportedFinderShapes() {
         return [
             'square',
+            'default',
             'circle',
             'dot',
             'rounded',
+            'rounded-corners',
             'extra-rounded',
             'leaf',
             'diamond',
             'rhombus',
+            'eye-shaped',
+            'octagon',
+            'whirlpool',
+            'water-drop',
+            'zigzag',
+            'circle-dots',
         ];
     }
 
@@ -432,13 +667,20 @@ class FinderProcessor extends BaseProcessor {
     static getSupportedDotShapes() {
         return [
             'square',
+            'default',
             'circle',
             'dot',
             'rounded',
+            'rounded-corners',
             'diamond',
             'rhombus',
             'star',
             'heart',
+            'eye-shaped',
+            'octagon',
+            'whirlpool',
+            'water-drop',
+            'zigzag',
         ];
     }
 }

@@ -9,12 +9,20 @@
  * - rounded
  * - extra-rounded
  * - rhombus / diamond
- * - vertical / vertical-line
- * - horizontal / horizontal-line
+ * - vertical / vertical-line / vertical-lines
+ * - horizontal / horizontal-line / horizontal-lines
  * - classy
  * - classy-rounded
- * - star
+ * - star / star-5
+ * - star-7
  * - heart
+ * - triangle
+ * - triangle-end
+ * - fish
+ * - tree
+ * - roundness
+ * - twoTrianglesWithCircle
+ * - fourTriangles
  */
 const BaseProcessor = require('./BaseProcessor');
 
@@ -35,15 +43,29 @@ class ModuleProcessor extends BaseProcessor {
             'diamond': this.createRhombus.bind(this),
             'vertical': this.createVerticalLine.bind(this),
             'vertical-line': this.createVerticalLine.bind(this),
+            'vertical-lines': this.createVerticalLine.bind(this),
             'verticalLine': this.createVerticalLine.bind(this),
             'horizontal': this.createHorizontalLine.bind(this),
             'horizontal-line': this.createHorizontalLine.bind(this),
+            'horizontal-lines': this.createHorizontalLine.bind(this),
             'horizontalLine': this.createHorizontalLine.bind(this),
             'classy': this.createClassy.bind(this),
             'classy-rounded': this.createClassyRounded.bind(this),
             'classyRounded': this.createClassyRounded.bind(this),
             'star': this.createStar.bind(this),
+            'star-5': this.createStar.bind(this),
+            'star-7': this.createStar7.bind(this),
             'heart': this.createHeart.bind(this),
+            // New shapes
+            'triangle': this.createTriangle.bind(this),
+            'triangle-end': this.createTriangleEnd.bind(this),
+            'fish': this.createFish.bind(this),
+            'tree': this.createTree.bind(this),
+            'roundness': this.createRoundness.bind(this),
+            'twoTrianglesWithCircle': this.createTwoTrianglesWithCircle.bind(this),
+            'twotriangleswithcircle': this.createTwoTrianglesWithCircle.bind(this),
+            'fourTriangles': this.createFourTriangles.bind(this),
+            'fourtriangles': this.createFourTriangles.bind(this),
         };
     }
 
@@ -305,6 +327,173 @@ class ModuleProcessor extends BaseProcessor {
         return heartPath;
     }
 
+    /**
+     * 7-pointed star module
+     */
+    createStar7(x, y, size, context = {}) {
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const outerR = size / 2 * 0.9;
+        const innerR = outerR * 0.45;
+        const points = 7;
+
+        let path = '';
+        for (let i = 0; i < points * 2; i++) {
+            const r = i % 2 === 0 ? outerR : innerR;
+            const angle = (i * Math.PI / points) - Math.PI / 2;
+            const px = cx + r * Math.cos(angle);
+            const py = cy + r * Math.sin(angle);
+
+            if (i === 0) {
+                path = `M ${px} ${py}`;
+            } else {
+                path += ` L ${px} ${py}`;
+            }
+        }
+        path += ' Z';
+
+        return path;
+    }
+
+    /**
+     * Triangle module (pointing up)
+     */
+    createTriangle(x, y, size, context = {}) {
+        const cx = x + size / 2;
+        const padding = size * 0.1;
+
+        return `M ${cx} ${y + padding} ` +
+            `L ${x + size - padding} ${y + size - padding} ` +
+            `L ${x + padding} ${y + size - padding} Z`;
+    }
+
+    /**
+     * Triangle-end module (pointing right, like an arrow)
+     */
+    createTriangleEnd(x, y, size, context = {}) {
+        const padding = size * 0.1;
+        const cy = y + size / 2;
+
+        return `M ${x + padding} ${y + padding} ` +
+            `L ${x + size - padding} ${cy} ` +
+            `L ${x + padding} ${y + size - padding} Z`;
+    }
+
+    /**
+     * Fish-shaped module
+     */
+    createFish(x, y, size, context = {}) {
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const bodyWidth = size * 0.7;
+        const bodyHeight = size * 0.5;
+
+        // Fish body (ellipse) with tail
+        const fishPath = `
+            M ${x + size * 0.15} ${cy}
+            Q ${x + size * 0.15} ${y + size * 0.25} ${cx} ${y + size * 0.25}
+            Q ${x + size * 0.75} ${y + size * 0.25} ${x + size * 0.75} ${cy}
+            L ${x + size * 0.95} ${y + size * 0.3}
+            L ${x + size * 0.95} ${y + size * 0.7}
+            L ${x + size * 0.75} ${cy}
+            Q ${x + size * 0.75} ${y + size * 0.75} ${cx} ${y + size * 0.75}
+            Q ${x + size * 0.15} ${y + size * 0.75} ${x + size * 0.15} ${cy}
+            Z
+        `.trim().replace(/\s+/g, ' ');
+
+        return fishPath;
+    }
+
+    /**
+     * Tree-shaped module (simple pine tree)
+     */
+    createTree(x, y, size, context = {}) {
+        const cx = x + size / 2;
+        const trunkWidth = size * 0.2;
+        const trunkHeight = size * 0.25;
+
+        // Tree with triangular top and rectangular trunk
+        const treePath = `
+            M ${cx} ${y + size * 0.05}
+            L ${x + size * 0.85} ${y + size * 0.65}
+            L ${x + size * 0.6} ${y + size * 0.65}
+            L ${x + size * 0.6} ${y + size * 0.95}
+            L ${x + size * 0.4} ${y + size * 0.95}
+            L ${x + size * 0.4} ${y + size * 0.65}
+            L ${x + size * 0.15} ${y + size * 0.65}
+            Z
+        `.trim().replace(/\s+/g, ' ');
+
+        return treePath;
+    }
+
+    /**
+     * Roundness module (very rounded square, almost pill-shaped)
+     */
+    createRoundness(x, y, size, context = {}) {
+        const r = size * 0.45; // Very large corner radius
+        return this.createRoundedRect(x, y, size, size, r);
+    }
+
+    /**
+     * Two triangles with circle module
+     */
+    createTwoTrianglesWithCircle(x, y, size, context = {}) {
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const circleR = size * 0.15;
+        const triangleSize = size * 0.35;
+
+        // Top triangle pointing up
+        const topTriangle = `M ${cx} ${y + size * 0.1} ` +
+            `L ${cx + triangleSize * 0.5} ${y + size * 0.1 + triangleSize * 0.7} ` +
+            `L ${cx - triangleSize * 0.5} ${y + size * 0.1 + triangleSize * 0.7} Z`;
+
+        // Bottom triangle pointing down
+        const bottomTriangle = `M ${cx} ${y + size * 0.9} ` +
+            `L ${cx + triangleSize * 0.5} ${y + size * 0.9 - triangleSize * 0.7} ` +
+            `L ${cx - triangleSize * 0.5} ${y + size * 0.9 - triangleSize * 0.7} Z`;
+
+        // Center circle
+        const circle = `M ${cx - circleR} ${cy} ` +
+            `A ${circleR} ${circleR} 0 1 1 ${cx + circleR} ${cy} ` +
+            `A ${circleR} ${circleR} 0 1 1 ${cx - circleR} ${cy}`;
+
+        return `${topTriangle} ${bottomTriangle} ${circle}`;
+    }
+
+    /**
+     * Four triangles module (pointing inward from each side)
+     */
+    createFourTriangles(x, y, size, context = {}) {
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const triangleDepth = size * 0.35;
+        const triangleWidth = size * 0.3;
+
+        // Top triangle (pointing down)
+        const top = `M ${cx} ${y + triangleDepth} ` +
+            `L ${cx + triangleWidth} ${y} ` +
+            `L ${cx - triangleWidth} ${y} Z`;
+
+        // Right triangle (pointing left)
+        const right = `M ${x + size - triangleDepth} ${cy} ` +
+            `L ${x + size} ${cy + triangleWidth} ` +
+            `L ${x + size} ${cy - triangleWidth} Z`;
+
+        // Bottom triangle (pointing up)
+        const bottom = `M ${cx} ${y + size - triangleDepth} ` +
+            `L ${cx + triangleWidth} ${y + size} ` +
+            `L ${cx - triangleWidth} ${y + size} Z`;
+
+        // Left triangle (pointing right)
+        const left = `M ${x + triangleDepth} ${cy} ` +
+            `L ${x} ${cy + triangleWidth} ` +
+            `L ${x} ${cy - triangleWidth} Z`;
+
+        return `${top} ${right} ${bottom} ${left}`;
+    }
+
     // ========================================
     // Helper Methods
     // ========================================
@@ -409,11 +598,22 @@ class ModuleProcessor extends BaseProcessor {
             'rhombus',
             'diamond',
             'vertical',
+            'vertical-lines',
             'horizontal',
+            'horizontal-lines',
             'classy',
             'classy-rounded',
             'star',
+            'star-5',
+            'star-7',
             'heart',
+            'triangle',
+            'triangle-end',
+            'fish',
+            'tree',
+            'roundness',
+            'twoTrianglesWithCircle',
+            'fourTriangles',
         ];
     }
 }

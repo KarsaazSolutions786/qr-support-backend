@@ -20,6 +20,7 @@ const ModuleProcessor = require('./processors/ModuleProcessor');
 const FinderProcessor = require('./processors/FinderProcessor');
 const LogoProcessor = require('./processors/LogoProcessor');
 const FrameProcessor = require('./processors/FrameProcessor');
+const StickerProcessor = require('./processors/StickerProcessor');
 const logger = require('../../utils/logger');
 
 /**
@@ -82,22 +83,20 @@ class QRCodeGenerator {
             new ColorProcessor(),           // Sort: 5
             new ModuleProcessor(),          // Sort: 7
             new FinderProcessor(),          // Sort: 8
+            new StickerProcessor(),         // Sort: 105
             new FrameProcessor(),           // Sort: 110
             new LogoProcessor(),            // Sort: 200
-            // Future processors:
-            
-            // new FrameProcessor(),         // Sort: 110 (Phase 6)
-            // new LogoProcessor(),          // Sort: 200 (Phase 5)
         ];
 
         // Sort processors by sortOrder
         this.processors.sort((a, b) => a.sortOrder - b.sortOrder);
 
-        // Create module processor instance for path generation
+        // Create processor instances for path generation
         this.moduleProcessor = new ModuleProcessor();
         this.finderProcessor = new FinderProcessor();
         this.logoProcessor = new LogoProcessor();
         this.frameProcessor = new FrameProcessor();
+        this.stickerProcessor = new StickerProcessor();
     }
 
     /**
@@ -350,6 +349,17 @@ class QRCodeGenerator {
         // Add finder patterns (the three large squares in corners)
         this.addFinderPatterns(svgBuilder, payload);
 
+        // Add sticker if present (processed by StickerProcessor)
+        if (payload.sticker) {
+            const stickerSVG = this.stickerProcessor.generateStickerSVG(payload.sticker, size);
+            if (stickerSVG.defs) {
+                svgBuilder.addDef(stickerSVG.defs);
+            }
+            if (stickerSVG.element) {
+                svgBuilder.addRaw(stickerSVG.element);
+            }
+        }
+
         // Add logo if present (processed by LogoProcessor)
         if (payload.logo) {
             const logoSVG = this.logoProcessor.generateLogoSVG(payload.logo);
@@ -560,7 +570,7 @@ class QRCodeGenerator {
      */
     static getCapabilities() {
         return {
-            version: '2.4.0',
+            version: '2.5.0',
             types: QRDataEncoder.getSupportedTypes(),
             features: {
                 colors: {
@@ -585,6 +595,13 @@ class QRCodeGenerator {
                     scaling: true,
                     rotation: true,
                     background: true,
+                    status: 'available',
+                },
+                stickers: {
+                    types: StickerProcessor.getSupportedStickers(),
+                    dropShadow: true,
+                    customColors: true,
+                    customText: true,
                     status: 'available',
                 },
                 advancedShapes: {
