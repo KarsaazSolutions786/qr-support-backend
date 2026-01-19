@@ -207,26 +207,14 @@ class FinderProcessor extends BaseProcessor {
     generateFinderPattern(finderShape, dotShape, x, y, moduleSize, colors = {}) {
         const outerSize = moduleSize * 7;
         const innerSize = moduleSize * 5;
-        let dotSize = moduleSize * 3;
+        const dotSize = moduleSize * 3;  // Always 3 modules
 
         const innerOffset = moduleSize;
-        let dotOffset = moduleSize * 2;
+        const dotOffset = moduleSize * 2;
 
         // Get the generator functions
         const finderGenerator = this.getFinderPathGenerator(finderShape);
         const dotGenerator = this.getDotPathGenerator(dotShape);
-
-        // Get the finder's scale factor (some Laravel shapes like whirlpool use 0.75)
-        const finderConfig = LaravelPaths.finders[finderShape];
-        const finderScale = (finderConfig && finderConfig.scale) || 1.0;
-
-        // IMPORTANT: If the finder has a scale factor (e.g., 0.75 for whirlpool),
-        // the dot must be scaled proportionally to match the finder's size!
-        // Otherwise, dots appear too large for scaled-down finders.
-        if (finderScale !== 1.0) {
-            dotSize = dotSize * finderScale;
-            dotOffset = dotOffset * finderScale + (moduleSize * 2 * (1 - finderScale));
-        }
 
         // Check if this is a Laravel compound path (donut with hole already cut out)
         const isLaravelCompoundPath = finderGenerator.isLaravelPath;
