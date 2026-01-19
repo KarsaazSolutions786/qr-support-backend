@@ -361,10 +361,15 @@ class FinderProcessor extends BaseProcessor {
             // But LaravelPath.dots usually has specific ones. 
             // In LaravelPaths.js I populated 'dots' specifically.
 
-            // Laravel viewBox is 700x700, apply shape-specific scale if defined
+            // Laravel viewBox is 700x700
             const viewBoxSize = 700;
             const baseScale = size / viewBoxSize;
-            const shapeScale = (config && config.scale) || 1.0;
+
+            // IMPORTANT: Dots should NOT inherit scale from finder shapes!
+            // Only use scale if it's defined specifically in LaravelPaths.dots
+            // If we're using a finder as fallback, ignore its scale property
+            const dotConfig = LaravelPaths.dots[shapeName];
+            const shapeScale = (dotConfig && dotConfig.scale) || 1.0;
             const finalScale = baseScale * shapeScale;
 
             // IMPORTANT: Dot paths in Laravel are centered at viewBox center (350,350)
