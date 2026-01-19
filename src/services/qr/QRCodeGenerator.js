@@ -440,8 +440,17 @@ class QRCodeGenerator {
                 moduleSize
             );
 
+            // Helper to add path (handles string or object with attrs)
+            const addPath = (pathData, defaultAttrs) => {
+                if (typeof pathData === 'object' && pathData !== null && pathData.d) {
+                    svgBuilder.addPath(pathData.d, { ...defaultAttrs, ...pathData.attrs });
+                } else if (typeof pathData === 'string') {
+                    svgBuilder.addPath(pathData, defaultAttrs);
+                }
+            };
+
             // Outer ring
-            svgBuilder.addPath(finderPaths.outerPath, {
+            addPath(finderPaths.outerPath, {
                 fill: eyeExternalColor,
                 fillRule: 'evenodd',
             });
@@ -449,13 +458,13 @@ class QRCodeGenerator {
             // Inner ring (hollow - white/background)
             const middleFill = payload.backgroundEnabled ?
                 (payload.backgroundColor || '#FFFFFF') : 'white';
-            svgBuilder.addPath(finderPaths.innerPath, {
+            addPath(finderPaths.innerPath, {
                 fill: middleFill,
                 fillRule: 'evenodd',
             });
 
             // Center dot
-            svgBuilder.addPath(finderPaths.dotPath, {
+            addPath(finderPaths.dotPath, {
                 fill: eyeInternalColor,
             });
         }

@@ -37,58 +37,70 @@
  * - zigzag
  */
 const BaseProcessor = require('./BaseProcessor');
+const LaravelPaths = require('./LaravelPaths');
 
 class FinderProcessor extends BaseProcessor {
     constructor() {
         super('FinderProcessor', 8);
 
+        // Ported shapes from Laravel
+        const portedFinders = [
+            'eye-shaped', 'octagon', 'rounded-corners', 'water-drop',
+            'whirlpool', 'zigzag', 'circle', 'circle-dots'
+        ];
+
+        const portedDots = [
+            'eye-shaped', 'octagon', 'rounded-corners', 'water-drop',
+            'whirlpool', 'zigzag', 'circle'
+        ];
+
         // Map of supported finder shapes
         this.finderShapes = {
             'square': this.createSquareFinder.bind(this),
             'default': this.createSquareFinder.bind(this),
-            'circle': this.createCircleFinder.bind(this),
-            'dot': this.createCircleFinder.bind(this),
-            'rounded': this.createRoundedFinder.bind(this),
-            'rounded-corners': this.createRoundedFinder.bind(this),
-            'roundedCorners': this.createRoundedFinder.bind(this),
+            'circle': this.createLaravelFinder('circle'), // Ported
+            'dot': this.createLaravelFinder('circle'),    // Ported
+            'rounded': this.createLaravelFinder('rounded-corners'), // Ported
+            'rounded-corners': this.createLaravelFinder('rounded-corners'), // Ported
+            'roundedCorners': this.createLaravelFinder('rounded-corners'), // Ported
             'extra-rounded': this.createExtraRoundedFinder.bind(this),
             'extraRounded': this.createExtraRoundedFinder.bind(this),
             'leaf': this.createLeafFinder.bind(this),
             'diamond': this.createDiamondFinder.bind(this),
             'rhombus': this.createDiamondFinder.bind(this),
-            // New shapes
-            'eye-shaped': this.createEyeShapedFinder.bind(this),
-            'eyeShaped': this.createEyeShapedFinder.bind(this),
-            'octagon': this.createOctagonFinder.bind(this),
-            'whirlpool': this.createWhirlpoolFinder.bind(this),
-            'water-drop': this.createWaterDropFinder.bind(this),
-            'waterDrop': this.createWaterDropFinder.bind(this),
-            'zigzag': this.createZigzagFinder.bind(this),
-            'circle-dots': this.createCircleDotsFinder.bind(this),
-            'circleDots': this.createCircleDotsFinder.bind(this),
+            // New shapes (Ported)
+            'eye-shaped': this.createLaravelFinder('eye-shaped'),
+            'eyeShaped': this.createLaravelFinder('eye-shaped'),
+            'octagon': this.createLaravelFinder('octagon'),
+            'whirlpool': this.createLaravelFinder('whirlpool'),
+            'water-drop': this.createLaravelFinder('water-drop'),
+            'waterDrop': this.createLaravelFinder('water-drop'),
+            'zigzag': this.createLaravelFinder('zigzag'),
+            'circle-dots': this.createLaravelFinder('circle-dots'),
+            'circleDots': this.createLaravelFinder('circle-dots'),
         };
 
         // Map of supported finder dot shapes
         this.dotShapes = {
             'square': this.createSquareDot.bind(this),
             'default': this.createSquareDot.bind(this),
-            'circle': this.createCircleDot.bind(this),
-            'dot': this.createCircleDot.bind(this),
-            'rounded': this.createRoundedDot.bind(this),
-            'rounded-corners': this.createRoundedDot.bind(this),
-            'roundedCorners': this.createRoundedDot.bind(this),
+            'circle': this.createLaravelDot('circle'), // Ported
+            'dot': this.createLaravelDot('circle'),    // Ported
+            'rounded': this.createLaravelDot('rounded-corners'), // Ported
+            'rounded-corners': this.createLaravelDot('rounded-corners'), // Ported
+            'roundedCorners': this.createLaravelDot('rounded-corners'), // Ported
             'diamond': this.createDiamondDot.bind(this),
             'rhombus': this.createDiamondDot.bind(this),
             'star': this.createStarDot.bind(this),
             'heart': this.createHeartDot.bind(this),
-            // New shapes
-            'eye-shaped': this.createEyeShapedDot.bind(this),
-            'eyeShaped': this.createEyeShapedDot.bind(this),
-            'octagon': this.createOctagonDot.bind(this),
-            'whirlpool': this.createWhirlpoolDot.bind(this),
-            'water-drop': this.createWaterDropDot.bind(this),
-            'waterDrop': this.createWaterDropDot.bind(this),
-            'zigzag': this.createZigzagDot.bind(this),
+            // New shapes (Ported)
+            'eye-shaped': this.createLaravelDot('eye-shaped'),
+            'eyeShaped': this.createLaravelDot('eye-shaped'),
+            'octagon': this.createLaravelDot('octagon'),
+            'whirlpool': this.createLaravelDot('whirlpool'),
+            'water-drop': this.createLaravelDot('water-drop'),
+            'waterDrop': this.createLaravelDot('water-drop'),
+            'zigzag': this.createLaravelDot('zigzag'),
         };
     }
 
@@ -197,6 +209,85 @@ class FinderProcessor extends BaseProcessor {
             outerPath: this.getFinderPathGenerator(finderShape)(x, y, outerSize),
             innerPath: this.getFinderPathGenerator(finderShape)(x + innerOffset, y + innerOffset, innerSize),
             dotPath: this.getDotPathGenerator(dotShape)(x + dotOffset, y + dotOffset, dotSize),
+        };
+    }
+
+    /**
+     * Create a finder pattern using Laravel SVG path
+     * @param {string} shapeName
+     */
+    createLaravelFinder(shapeName) {
+        return (x, y, size) => {
+            const config = LaravelPaths.finders[shapeName];
+            if (!config) {
+                console.warn(`[FinderProcessor] Laravel finder shape '${shapeName}' not found`);
+                return this.createSquareFinder(x, y, size);
+            }
+
+            const scale = size / 700;
+            // Default transform: move to x,y and scale
+            let transform = `translate(${x},${y}) scale(${scale})`;
+
+            // If shape requires flipping (like some asymmetrical patterns in Laravel)
+            if (config.shouldFlip) {
+                // To flip horizontally around the center of the shape:
+                // 1. Move to (x,y)
+                // 2. Move by width (size, 0)
+                // 3. Scale by (-1, 1) * original_scale
+                transform = `translate(${x + size},${y}) scale(-${scale},${scale})`;
+            }
+
+            return {
+                d: config.path,
+                attrs: {
+                    transform
+                }
+            };
+        };
+    }
+
+    /**
+     * Create a finder dot using Laravel SVG path
+     * @param {string} shapeName
+     */
+    createLaravelDot(shapeName) {
+        return (x, y, size) => {
+            const config = LaravelPaths.dots[shapeName] || LaravelPaths.finders[shapeName];
+
+            // If dot not found in specific dots or generic finders, use square
+            if (!config) {
+                // Try searching finders map if dot map fails (or fallback)
+                if (LaravelPaths.finders[shapeName]) {
+                    // logic handled by || above
+                } else {
+                    console.warn(`[FinderProcessor] Laravel dot shape '${shapeName}' not found`);
+                    return this.createSquareDot(x, y, size);
+                }
+            }
+
+            // Note: Use config found (either from dots or finders)
+            // Some dots might re-use finder shapes if not explicitly defined in 'dots'
+            // But LaravelPath.dots usually has specific ones. 
+            // In LaravelPaths.js I populated 'dots' specifically.
+
+            const scale = size / 700;
+            let transform = `translate(${x},${y}) scale(${scale})`;
+
+            if (config && config.shouldFlip) {
+                transform = `translate(${x + size},${y}) scale(-${scale},${scale})`;
+            }
+
+            // Careful: if config wasn't found in dots but used finder fallback, it might be large. 
+            // But 'size' passed here is dotSize (3 modules). 
+            // Laravel paths are 700x700 relative units. Scaling by size/700 makes it fit 'size'.
+            // So logical reuse is fine.
+
+            return {
+                d: (config || LaravelPaths.finders[shapeName] || {}).path || '',
+                attrs: {
+                    transform
+                }
+            };
         };
     }
 
