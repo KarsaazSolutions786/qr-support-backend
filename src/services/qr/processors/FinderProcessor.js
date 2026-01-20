@@ -311,16 +311,37 @@ class FinderProcessor extends BaseProcessor {
             const shapeScale = config.scale || 1.0;
             const finalScale = baseScale * shapeScale;
 
-            // Default transform: move to x,y and scale
-            let transform = `translate(${x},${y}) scale(${finalScale})`;
+            // Calculate the center of the viewBox
+            const viewBoxCenter = viewBoxSize / 2; // 350
 
-            // If shape requires flipping (like some asymmetrical patterns in Laravel)
-            if (config.shouldFlip) {
-                // To flip horizontally around the center of the shape:
-                // 1. Move to (x,y)
-                // 2. Move by width (size, 0)
-                // 3. Scale by (-1, 1) * original_scale
-                transform = `translate(${x + size},${y}) scale(-${finalScale},${finalScale})`;
+            // For proper centering at all positions, we need to:
+            // 1. Translate to target position center
+            // 2. Scale 
+            // 3. Translate by viewBox center offset to align path properly
+            // 
+            // For shapes with scale < 1.0 (like circle-dots with 0.75), 
+            // the path needs additional offset to center within the target area
+
+            let transform;
+
+            if (shapeScale !== 1.0) {
+                // For scaled shapes, use center-based transform for consistent positioning
+                // The scaled shape is smaller, so we offset to center it in the target area
+                const scaledViewBoxSize = viewBoxSize * shapeScale;
+                const centerOffset = (viewBoxSize - scaledViewBoxSize) / 2;
+
+                if (config.shouldFlip) {
+                    transform = `translate(${x + size},${y}) scale(-${finalScale},${finalScale}) translate(${centerOffset},${centerOffset})`;
+                } else {
+                    transform = `translate(${x},${y}) scale(${finalScale}) translate(${centerOffset},${centerOffset})`;
+                }
+            } else {
+                // Standard transform for full-scale shapes
+                if (config.shouldFlip) {
+                    transform = `translate(${x + size},${y}) scale(-${finalScale},${finalScale})`;
+                } else {
+                    transform = `translate(${x},${y}) scale(${finalScale})`;
+                }
             }
 
             return {
