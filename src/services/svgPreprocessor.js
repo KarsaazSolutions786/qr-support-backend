@@ -63,6 +63,9 @@ class SVGPreprocessor {
             // Step 10: Ensure all elements have explicit fills
             svg = this.ensureExplicitFills(svg, design);
 
+            // Step 11: Remove any duplicate attributes (critical for Sharp!)
+            svg = this.removeDuplicateAttributes(svg);
+
             logger.debug('SVG preprocessing completed');
             return svg;
         } catch (error) {

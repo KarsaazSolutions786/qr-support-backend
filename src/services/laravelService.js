@@ -128,6 +128,12 @@ class LaravelService {
 
         const response = await this.request('POST', '/api/flutter/preview', data, authToken);
 
+        console.log('\n🔍 RAW LARAVEL RESPONSE:');
+        console.log('Type:', typeof response);
+        console.log('Keys:', Object.keys(response).join(', '));
+        console.log('Full response:', JSON.stringify(response, null, 2).substring(0, 500));
+        console.log('====\n');
+
         // Normalize the response to ensure SVG is accessible
         const normalized = {
             success: response.success,
@@ -146,7 +152,7 @@ class LaravelService {
      * Laravel might return SVG in different ways:
      * - response.data.svg
      * - response.data.images.svg
-     * - response.data.images.svg_base64
+     * - response.preview (string - the SVG directly!)
      * - response.preview.svg
      * - response.svg (direct)
      *
@@ -154,32 +160,86 @@ class LaravelService {
      * @returns {object} Normalized data object with svg property
      */
     extractSvgFromResponse(response) {
+        console.log('\n🔍 === EXTRACTION DEBUG ===');
+        console.log('Response keys:', Object.keys(response));
+        console.log('Has preview?:', !!response.preview);
+        console.log('Preview type:', typeof response.preview);
+        if (response.preview) {
+            console.log('Preview keys:', Object.keys(response.preview));
+            console.log('Has preview.svg?:', !!response.preview.svg);
+            if (response.preview.svg) {
+                console.log('preview.svg length:', response.preview.svg.length);
+            }
+        }
+        console.log('=========================\n');
+
+        logger.debug('===extractSvgFromResponse called===');
+        logger.debug('Response type:', typeof response);
+        logger.debug('Response keys:', Object.keys(response).join(', '));
+
         let svg = null;
 
         // Try different paths where SVG might be
         if (response.data?.svg) {
+            console.log('✅ FOUND: response.data.svg');
             svg = response.data.svg;
         } else if (response.data?.images?.svg) {
+            logger.debug('✅ SVG found at response.data.images.svg');
             svg = response.data.images.svg;
         } else if (response.data?.images?.svg_base64) {
+            logger.debug('✅ SVG found at response.data.images.svg_base64 (base64)');
             svg = Buffer.from(response.data.images.svg_base64, 'base64').toString('utf-8');
-        } else if (response.preview?.svg) {
+        }
+        // CHECK IF PREVIEW IS THE SVG STRING DIRECTLY
+        else if (typeof response.preview === 'string' && response.preview.includes('<svg')) {
+            logger.debug('✅ SVG found as string in response.preview');
+            svg = response.preview;
+        }
+        // THIS IS THE KEY CHECK FOR LARAVEL!
+        else if (response.preview?.svg) {
+            logger.info('✅✅✅ SVG FOUND at response.preview.svg ✅✅✅');
+            logger.debug('SVG length:', response.preview.svg.length);
             svg = response.preview.svg;
         } else if (response.preview?.images?.svg) {
+            logger.debug('✅ SVG found at response.preview.images.svg');
             svg = response.preview.images.svg;
         } else if (response.preview?.images?.svg_base64) {
+            logger.debug('✅ SVG found at response.preview.images.svg_base64 (base64)');
             svg = Buffer.from(response.preview.images.svg_base64, 'base64').toString('utf-8');
         } else if (response.svg) {
+            logger.debug('✅ SVG found at response.svg');
             svg = response.svg;
         } else if (response.images?.svg) {
+            logger.debug('✅ SVG found at response.images.svg');
             svg = response.images.svg;
         } else if (response.images?.svg_base64) {
+            logger.debug('✅ SVG found at response.images.svg_base64 (base64)');
             svg = Buffer.from(response.images.svg_base64, 'base64').toString('utf-8');
+        }
+
+        //  Debug what we're checking
+        if (!svg) {
+            logger.error('❌ NO SVG FOUND IN RESPONSE');
+            logger.error('  response.preview exists?', !!response.preview);
+            logger.error('  response.preview type:', typeof response.preview);
+            if (response.preview && typeof response.preview === 'object') {
+                logger.error('  response.preview.svg exists?', !!response.preview.svg);
+                logger.error('  response.preview keys:', Object.keys(response.preview).join(', '));
+            }
         }
 
         // If SVG is base64 encoded (starts with PD94 which is <?x in base64)
         if (svg && svg.startsWith('PD94')) {
+            logger.debug('SVG is base64 encoded, decoding...');
             svg = Buffer.from(svg, 'base64').toString('utf-8');
+        }
+
+        if (!svg) {
+            logger.warn('No SVG found in Laravel response. Response keys: ' + Object.keys(response).join(', '));
+            if (response.preview) {
+                logger.warn('Preview type: ' + typeof response.preview);
+                logger.warn('Preview preview (first 100 chars): ' + String(response.preview).substring(0, 100));
+            }
         }
 
         return {

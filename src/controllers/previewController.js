@@ -11,6 +11,9 @@
 
 const QRCodeGenerator = require('../services/qr/QRCodeGenerator');
 const QRDataEncoder = require('../services/qr/QRDataEncoder');
+const laravelService = require('../services/laravelService');
+const svgPreprocessor = require('../services/svgPreprocessor');
+const svgToPngService = require('../services/svgToPngService');
 
 const generator = new QRCodeGenerator();
 const cacheService = require('../services/cacheService');
@@ -31,6 +34,10 @@ const logger = require('../utils/logger');
  * - use_laravel: Use Laravel backend for full feature support (default true)
  */
 exports.generatePreview = async (req, res) => {
+    console.log('\n\n🚀🚀🚀 GENERATEPREVIEW CALLED 🚀🚀🚀');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀\n');
+
     const startTime = Date.now();
 
     try {
@@ -107,10 +114,18 @@ exports.generatePreview = async (req, res) => {
                 });
 
                 // Response is normalized by laravelService
+                logger.debug('Laravel response received:', JSON.stringify({
+                    success: laravelResponse.success,
+                    hasSvg: !!laravelResponse.data?.svg,
+                    dataKeys: laravelResponse.data ? Object.keys(laravelResponse.data) : [],
+                    rawKeys: laravelResponse.raw ? Object.keys(laravelResponse.raw) : []
+                }));
+
                 if (laravelResponse.success !== false && laravelResponse.data?.svg) {
                     const svgContent = laravelResponse.data.svg;
 
-                    logger.debug(`Laravel SVG received: ${svgContent.substring(0, 200)}...`);
+                    logger.info(`✅ Laravel SVG received successfully (${svgContent.length} bytes)`);
+                    logger.debug(`SVG preview: ${svgContent.substring(0, 200)}...`);
 
                     // Preprocess SVG for Sharp/Flutter compatibility
                     logger.debug('Preprocessing SVG for Sharp compatibility...');
@@ -128,9 +143,15 @@ exports.generatePreview = async (req, res) => {
                     });
 
                     strategyReason = 'laravel_converted';
-                    logger.debug(`Laravel SVG converted to PNG: ${pngBuffer.length} bytes`);
+                    logger.info(`✅ Laravel SVG converted to PNG: ${pngBuffer.length} bytes`);
                 } else {
-                    logger.warn('Laravel response missing SVG, raw response:', JSON.stringify(laravelResponse.raw || laravelResponse));
+                    logger.error('❌ Laravel response missing SVG!');
+                    logger.error('Response success:', laravelResponse.success);
+                    logger.error('Has data.svg:', !!laravelResponse.data?.svg);
+                    if (laravelResponse.raw) {
+                        logger.error('Raw response keys:', Object.keys(laravelResponse.raw).join(', '));
+                        logger.error('Raw response:', JSON.stringify(laravelResponse.raw, null, 2));
+                    }
                     throw new Error('Laravel response missing SVG content');
                 }
             } catch (laravelError) {
@@ -196,9 +217,69 @@ exports.generatePreview = async (req, res) => {
 
 /**
  * Check if design requires Laravel features
+ * 
+ * Returns true if the design uses features that require Laravel's advanced processors:
+ * - Themed shapes (60+ shapes like star, heart, apple, etc.)
+ * - Advanced frames (coupon, healthcare, etc.)
+ * - Stickers
+ * 
+ * Module shapes, finders, and finder dots are handled by Node.js
  */
 function checkLaravelFeatures(design) {
-    // Node.js now handles all features - no need for Laravel
+    console.log('\n🔍 checkLaravelFeatures CALLED');
+    console.log('Design:', JSON.stringify(design, null, 2));
+
+    // List of all 65 themed shapes that require Laravel
+    const themedShapes = [
+        // Food & Beverage (10)
+        'apple', 'bakery', 'burger', 'cooking', 'cup', 'food',
+        'ice-cream', 'juice', 'pizza', 'restaurant', 'shawarma', 'water-glass',
+        // Business & Commerce (9)
+        'bag', 'gift', 'shopping-cart', 'piggy-bank', 'realtor',
+        'realtor-sign', 'search', 'ticket', 'trophy', 'travel',
+        // Services (14)
+        'builder', 'dentist', 'electrician', 'furniture', 'gardening',
+        'golf', 'legal', 'locksmith', 'painter', 'pest', 'plumber',
+        'salon', 'gym', 'home-mover', 'pet',
+        // Technology & Objects (18)
+        'book', 'boot', 'bulb', 'car', 'cloud', 'home',
+        'message', 'mobile', 'star', 'sun', 'sunrise',
+        'teddy', 'truck', 'umbrella', 'van', 'watch',
+        'barn', 'shirt', 'circle', 'shield',
+        // Nature & Health (8)
+        'brain', 'leaf', 'tree', 'water', 'flower',
+        'heart', 'fish', 'bear',
+    ];
+
+    // Check for themed shape (both snake_case and camelCase)
+    const themedShape = design.themed_shape || design.themedShape || design.shape;
+    console.log('Themed shape found:', themedShape);
+
+    if (themedShape && themedShape !== 'none' && themedShapes.includes(themedShape.toLowerCase())) {
+        console.log('✅✅ DETECTED: Themed shape requires Laravel!');
+        logger.debug(`Laravel required: themed shape '${themedShape}' detected`);
+        return true;
+    }
+
+    // Check for advanced frames
+    const advancedShape = design.advanced_shape || design.advancedShape;
+    if (advancedShape && advancedShape !== 'none') {
+        console.log('✅ DETECTED: Advanced frame requires Laravel!');
+        logger.debug(`Laravel required: advanced frame '${advancedShape}' detected`);
+        return true;
+    }
+
+    // Check for stickers
+    if (design.sticker && design.sticker !== 'none') {
+        console.log('✅ DETECTED: Sticker requires Laravel!');
+        logger.debug(`Laravel required: sticker detected`);
+        return true;
+    }
+
+    // All other features (modules, finders, finder dots, colors, gradients, logos)
+    // are handled by Node.js
+    console.log('❌ No Laravel features detected, using Node.js');
+    logger.debug('No Laravel features required, using Node.js');
     return false;
 }
 
