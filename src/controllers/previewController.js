@@ -11,6 +11,7 @@
 
 const QRCodeGenerator = require('../services/qr/QRCodeGenerator');
 const QRDataEncoder = require('../services/qr/QRDataEncoder');
+const laravelProxyService = require('../services/LaravelProxyService');
 
 const generator = new QRCodeGenerator();
 const cacheService = require('../services/cacheService');
@@ -84,6 +85,54 @@ exports.generatePreview = async (req, res) => {
                     },
                 },
             });
+        }
+
+        // Check for themed shape - requires specialized handling via LaravelProxyService
+        if (design.themed_shape || design.shape) {
+            try {
+                logger.info(`Delegating themed shape generation to Laravel: ${design.themed_shape || design.shape}`);
+
+                const pngBuffer = await laravelProxyService.generateWithThemedShape(
+                    design,
+                    data,
+                    type,
+                    size
+                );
+
+                const duration = Date.now() - startTime;
+
+                return res.json({
+                    success: true,
+                    data: {
+                        rendering_strategy: 'server',
+                        strategy_reason: 'themed_shape',
+                        design: design,
+                        images: {
+                            png_base64: pngBuffer.toString('base64'),
+                            format: 'png',
+                            size: `${size}x${size}`,
+                        },
+                        meta: {
+                            type,
+                            cached: false,
+                            node_processed: false,
+                            laravel_source: true,
+                            generation_ms: duration,
+                        },
+                    },
+                });
+            } catch (proxyError) {
+                logger.error(`Themed shape generation failed: ${proxyError.message}`);
+                // Fall through to regular Node generation as fallback, or return error?
+                // For themed shapes, fallback doesn't make sense as Node can't render them.
+                return res.status(502).json({
+                    success: false,
+                    error: {
+                        code: 'THEMED_GENERATION_FAILED',
+                        message: `Failed to generate themed QR: ${proxyError.message}`
+                    }
+                });
+            }
         }
 
         let pngBuffer;
@@ -387,6 +436,29 @@ exports.getCapabilities = async (req, res) => {
                 code: 'CAPABILITIES_ERROR',
                 message: error.message,
             },
+        });
+    }
+};
+
+/**
+ * Get available themed shapes from Laravel
+ * 
+ * GET /api/qr/themed-shapes
+ */
+exports.getThemedShapes = async (req, res) => {
+    try {
+        const shapes = await laravelProxyService.getThemedShapes();
+        res.json({
+            success: true,
+            data: shapes
+        });
+    } catch (error) {
+        res.status(502).json({
+            success: false,
+            error: {
+                code: 'PROXY_ERROR',
+                message: error.message
+            }
         });
     }
 };
