@@ -423,8 +423,15 @@ class FrameProcessor extends BaseProcessor {
      */
     shouldProcess(payload) {
         const { design } = payload;
-        const shape = design.advancedShape || design.frame || 'none';
-        return shape !== 'none' && this.frames[shape];
+        // Check advancedShape (stickers), shape (outlined shapes like apple, bag), and frame
+        // Note: 'none' is truthy but means "no shape", so we need to check for it explicitly
+        const advancedShape = design.advancedShape && design.advancedShape !== 'none' ? design.advancedShape : null;
+        const outlinedShape = design.shape && design.shape !== 'none' ? design.shape : null;
+        const frameShape = design.frame && design.frame !== 'none' ? design.frame : null;
+        const shape = advancedShape || outlinedShape || frameShape || 'none';
+        const hasFrame = shape !== 'none' && !!this.frames[shape];
+        this.log(`shouldProcess: resolved='${shape}', advancedShape='${design.advancedShape}', shape='${design.shape}', frame='${design.frame}', hasFrame=${hasFrame}`);
+        return hasFrame;
     }
 
     /**
@@ -435,7 +442,12 @@ class FrameProcessor extends BaseProcessor {
     async process(payload) {
         const { design, size } = payload;
 
-        const frameType = design.advancedShape || design.frame || 'none';
+        // Check advancedShape (stickers), shape (outlined shapes like apple, bag), and frame
+        // Note: 'none' is truthy but means "no shape", so we need to check for it explicitly
+        const advancedShape = design.advancedShape && design.advancedShape !== 'none' ? design.advancedShape : null;
+        const outlinedShape = design.shape && design.shape !== 'none' ? design.shape : null;
+        const frameShape = design.frame && design.frame !== 'none' ? design.frame : null;
+        const frameType = advancedShape || outlinedShape || frameShape || 'none';
         const frameColor = design.advancedShapeFrameColor || design.frameColor || '#000000';
         const textColor = design.advancedShapeTextColor || design.textColor || '#FFFFFF';
         const dropShadow = design.advancedShapeDropShadow || design.dropShadow || false;
