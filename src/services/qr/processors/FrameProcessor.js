@@ -528,44 +528,49 @@ class FrameProcessor extends BaseProcessor {
     createLaravelShapeFrame(shapeId, frameInfo, size, qrSize) {
         const shapeData = this.laravelShapes[shapeId];
         if (!shapeData) {
+            this.log(`Shape data not found for: ${shapeId}`, 'warn');
             return { beforeQR: '', afterQR: '', defs: '' };
         }
 
         const { color, dropShadow } = frameInfo;
         const viewBox = shapeData.symbolViewBox || '0 0 700 700';
 
+        this.log(`Creating Laravel shape frame: ${shapeId}, size=${size}, viewBox=${viewBox}, hasFrame=${shapeData.hasFrame}`);
+
         let defs = '';
         if (dropShadow) {
-            defs = this.createDropShadowDef('frameShadow');
+            defs += this.createDropShadowDef('frameShadow');
+        }
+
+        // Define clip path from symbol if available (for clipping QR to shape)
+        if (shapeData.symbolPath) {
+            defs += `
+                <clipPath id="clip-${shapeId}">
+                    <path d="${shapeData.symbolPath}" transform="scale(${size / 700})"/>
+                </clipPath>
+            `;
         }
 
         let frameContent = '';
 
-        // If the shape has a frame path, render it
+        // If the shape has a frame path, render it with proper scaling
         if (shapeData.hasFrame && shapeData.framePath) {
+            // Use nested SVG to handle viewBox scaling automatically
             frameContent = `
-                <g class="shape-frame" ${dropShadow ? 'filter="url(#frameShadow)"' : ''}>
-                    <path d="${shapeData.framePath}"
-                          fill="${color}"
-                          stroke="none"/>
-                </g>
+                <svg x="0" y="0" width="${size}" height="${size}" viewBox="${viewBox}" preserveAspectRatio="xMidYMid meet" class="shape-frame-container">
+                    <g class="shape-frame" ${dropShadow ? 'filter="url(#frameShadow)"' : ''}>
+                        <path d="${shapeData.framePath}"
+                              fill="${color}"
+                              stroke="none"/>
+                    </g>
+                </svg>
             `;
         }
 
-        // Create symbol path if available (for masking)
-        let symbolContent = '';
-        if (shapeData.symbolPath) {
-            symbolContent = `
-                <defs>
-                    <symbol id="symbol-${shapeId}" viewBox="${viewBox}">
-                        <path d="${shapeData.symbolPath}"/>
-                    </symbol>
-                </defs>
-            `;
-        }
+        this.log(`Frame content generated: frameContent length=${frameContent.length}, defs length=${defs.length}`);
 
         return {
-            beforeQR: symbolContent + frameContent,
+            beforeQR: frameContent,  // Frame rendered before QR (as background/border)
             afterQR: '',
             defs: defs,
         };
