@@ -88,7 +88,7 @@ exports.generatePreview = async (req, res) => {
         }
 
         // Check for themed shape - requires specialized handling via LaravelProxyService
-        if (design.themed_shape || design.shape) {
+        if (laravelProxyService.requiresLaravelBackend(design)) {
             try {
                 logger.info(`Delegating themed shape generation to Laravel: ${design.themed_shape || design.shape}`);
 
@@ -425,6 +425,11 @@ exports.getCapabilities = async (req, res) => {
                         background_shapes: capabilities.features.logo.backgroundShapes,
                     },
                     frames: capabilities.features.frames?.types || [],
+                    themed_shapes: {
+                        supported: true,
+                        description: 'Custom QR shapes via Laravel backend (house, car, apple, etc.)',
+                        endpoint: '/api/qr/themed-shapes'
+                    },
                     error_correction: capabilities.features.errorCorrection,
                 },
             },

@@ -173,7 +173,8 @@ class LaravelProxyService {
      * @returns {boolean}
      */
     requiresLaravelBackend(design) {
-        return !!(design.themed_shape || design.shape);
+        const shape = design.themed_shape || design.shape;
+        return !!shape && shape !== 'none';
     }
 }
 
