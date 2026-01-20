@@ -48,6 +48,9 @@ router.post('/qr/preview/laravel', previewController.generateFromLaravel);
 // Get supported capabilities
 router.get('/qr/capabilities', previewController.getCapabilities);
 
+// Get available themed shapes
+router.get('/qr/themed-shapes', previewController.getThemedShapes);
+
 // Legacy endpoints
 router.post('/qr/render', qrController.renderQRCode);
 router.get('/qr/:id/png', qrController.getQRCodePng);
