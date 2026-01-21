@@ -73,8 +73,11 @@ class StickerProcessor extends BaseProcessor {
      */
     shouldProcess(payload) {
         const { design } = payload;
-        const sticker = design.sticker || design.centerSticker || design.stickerType;
-        return sticker && sticker !== 'none' && this.stickers[sticker];
+        // Also check advancedShape - Flutter sends sticker type via this field
+        const sticker = design.sticker || design.centerSticker || design.stickerType || design.advancedShape;
+        const shouldProcess = sticker && sticker !== 'none' && !!this.stickers[sticker];
+        this.log(`shouldProcess: sticker='${sticker}', advancedShape='${design.advancedShape}', hasGenerator=${!!this.stickers[sticker]}, result=${shouldProcess}`);
+        return shouldProcess;
     }
 
     /**
@@ -85,12 +88,15 @@ class StickerProcessor extends BaseProcessor {
     async process(payload) {
         const { design, size } = payload;
 
-        const stickerType = design.sticker || design.centerSticker || design.stickerType || 'none';
-        const stickerColor = design.stickerColor || design.stickerBackgroundColor || '#FF4444';
-        const stickerTextColor = design.stickerTextColor || '#FFFFFF';
-        const stickerText = design.stickerText || this.getDefaultText(stickerType);
+        // Also check advancedShape - Flutter sends sticker type via this field
+        const stickerType = design.sticker || design.centerSticker || design.stickerType || design.advancedShape || 'none';
+        // Flutter sends colors via advancedShapeFrameColor
+        const stickerColor = design.stickerColor || design.stickerBackgroundColor || design.advancedShapeFrameColor || '#FF4444';
+        const stickerTextColor = design.stickerTextColor || design.textColor || '#FFFFFF';
+        const stickerText = design.stickerText || design.text || this.getDefaultText(stickerType);
         const stickerScale = design.stickerScale || 0.25; // 25% of QR size
-        const dropShadow = design.stickerDropShadow !== false;
+        // Flutter sends drop shadow via advancedShapeDropShadow
+        const dropShadow = design.stickerDropShadow !== false && design.advancedShapeDropShadow !== false;
 
         // Calculate sticker dimensions
         const stickerSize = size * stickerScale;

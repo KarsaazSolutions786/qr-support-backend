@@ -1,0 +1,7 @@
+=== STICKER DEBUG TEST ===
+
+Sending advancedShape: healthcare
+
+Response received:
+  Strategy: laravel_converted
+  Laravel: true
