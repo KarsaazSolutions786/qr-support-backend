@@ -29,6 +29,7 @@ class FrameProcessor extends BaseProcessor {
             'none': null,
             'scan-me': this.createScanMeFrame.bind(this),
             'four-corners-text-bottom': this.createFourCornersFrame.bind(this),
+            'four-corners-text-top': this.createFourCornersTopFrame.bind(this),
             'rounded-frame': this.createRoundedFrame.bind(this),
             'banner-bottom': this.createBannerBottomFrame.bind(this),
             'healthcare': this.createHealthcareFrame.bind(this),
@@ -36,6 +37,14 @@ class FrameProcessor extends BaseProcessor {
             'review-collector': this.createReviewFrame.bind(this),
             'social-follow': this.createSocialFrame.bind(this),
             'ticket': this.createTicketFrame.bind(this),
+            // Laravel-style advanced shapes (stickers with text frames)
+            'simple-text-bottom': this.createSimpleTextBottomFrame.bind(this),
+            'simple-text-top': this.createSimpleTextTopFrame.bind(this),
+            'rect-frame-text-bottom': this.createRectFrameTextBottomFrame.bind(this),
+            'rect-frame-text-top': this.createRectFrameTextTopFrame.bind(this),
+            'coupon': this.createCouponFrame.bind(this),
+            'pincode-protected': this.createPincodeProtectedFrame.bind(this),
+            'qrcode-details': this.createQRCodeDetailsFrame.bind(this),
         };
 
         // Laravel shape definitions - comprehensive collection of 60+ shapes
@@ -486,6 +495,7 @@ class FrameProcessor extends BaseProcessor {
         const defaults = {
             'scan-me': 'SCAN ME',
             'four-corners-text-bottom': 'SCAN HERE',
+            'four-corners-text-top': 'SCAN HERE',
             'rounded-frame': 'SCAN TO VIEW',
             'banner-bottom': 'SCAN QR CODE',
             'healthcare': 'HEALTH INFO',
@@ -493,6 +503,14 @@ class FrameProcessor extends BaseProcessor {
             'review-collector': 'LEAVE A REVIEW',
             'social-follow': 'FOLLOW US',
             'ticket': 'SCAN TICKET',
+            // Laravel-style advanced shapes
+            'simple-text-bottom': 'SCAN ME',
+            'simple-text-top': 'SCAN ME',
+            'rect-frame-text-bottom': 'SCAN ME',
+            'rect-frame-text-top': 'SCAN ME',
+            'coupon': 'COUPON CODE',
+            'pincode-protected': 'PROTECTED',
+            'qrcode-details': 'QR CODE',
         };
         return defaults[frameType] || 'SCAN ME';
     }
@@ -925,6 +943,432 @@ class FrameProcessor extends BaseProcessor {
     }
 
     // ========================================
+    // Laravel-Style Advanced Shape Frames
+    // ========================================
+
+    /**
+     * Simple text at bottom - QR code with text banner below
+     * Matches Laravel's simple-text-bottom.svg template
+     */
+    createSimpleTextBottomFrame(frameInfo, size, qrSize) {
+        const { color, textColor, text, dropShadow } = frameInfo;
+        // Adjusted proportions to fit within the canvas
+        const bannerHeight = size * 0.15;
+        const bannerY = size * 0.83;
+        const arrowSize = size * 0.04;
+        const fontSize = size * 0.05;
+        const cornerRadius = size * 0.025;
+        const padding = size * 0.05;
+
+        let defs = '';
+        if (dropShadow) {
+            defs = this.createDropShadowDef('frameShadow');
+        }
+
+        // Text banner with arrow pointing up
+        const banner = `
+            <g ${dropShadow ? 'filter="url(#frameShadow)"' : ''}>
+                <!-- Text background rectangle -->
+                <rect x="${padding}" y="${bannerY}"
+                      width="${size - padding * 2}" height="${bannerHeight}"
+                      rx="${cornerRadius}" ry="${cornerRadius}"
+                      fill="${color}"/>
+                <!-- Arrow pointing up -->
+                <path d="M ${size / 2 - arrowSize} ${bannerY}
+                         L ${size / 2} ${bannerY - arrowSize}
+                         L ${size / 2 + arrowSize} ${bannerY} Z"
+                      fill="${color}"/>
+            </g>
+        `;
+
+        const textElement = `
+            <text x="${size / 2}" y="${bannerY + bannerHeight * 0.65}"
+                  font-family="Arial, sans-serif"
+                  font-size="${fontSize}"
+                  font-weight="bold"
+                  fill="${textColor}"
+                  text-anchor="middle">
+                ${this.escapeXml(text)}
+            </text>
+        `;
+
+        return { beforeQR: '', afterQR: banner + textElement, defs };
+    }
+
+    /**
+     * Simple text at top - QR code with text banner above
+     * Matches Laravel's simple-text-top.svg template
+     */
+    createSimpleTextTopFrame(frameInfo, size, qrSize) {
+        const { color, textColor, text, dropShadow } = frameInfo;
+        // Adjusted proportions to fit within the canvas
+        const bannerHeight = size * 0.15;
+        const bannerY = size * 0.02;
+        const arrowSize = size * 0.04;
+        const fontSize = size * 0.05;
+        const cornerRadius = size * 0.025;
+        const padding = size * 0.05;
+
+        let defs = '';
+        if (dropShadow) {
+            defs = this.createDropShadowDef('frameShadow');
+        }
+
+        // Text banner with arrow pointing down
+        const banner = `
+            <g ${dropShadow ? 'filter="url(#frameShadow)"' : ''}>
+                <!-- Text background rectangle -->
+                <rect x="${padding}" y="${bannerY}"
+                      width="${size - padding * 2}" height="${bannerHeight}"
+                      rx="${cornerRadius}" ry="${cornerRadius}"
+                      fill="${color}"/>
+                <!-- Arrow pointing down -->
+                <path d="M ${size / 2 - arrowSize} ${bannerY + bannerHeight}
+                         L ${size / 2} ${bannerY + bannerHeight + arrowSize}
+                         L ${size / 2 + arrowSize} ${bannerY + bannerHeight} Z"
+                      fill="${color}"/>
+            </g>
+        `;
+
+        const textElement = `
+            <text x="${size / 2}" y="${bannerY + bannerHeight * 0.65}"
+                  font-family="Arial, sans-serif"
+                  font-size="${fontSize}"
+                  font-weight="bold"
+                  fill="${textColor}"
+                  text-anchor="middle">
+                ${this.escapeXml(text)}
+            </text>
+        `;
+
+        return { beforeQR: banner + textElement, afterQR: '', defs };
+    }
+
+    /**
+     * Rectangular frame with text at bottom
+     * Matches Laravel's rect-frame-text-bottom.svg template
+     */
+    createRectFrameTextBottomFrame(frameInfo, size, qrSize) {
+        const { color, textColor, text, dropShadow } = frameInfo;
+        const padding = size * 0.04;
+        const frameWidth = size * 0.015;
+        const cornerRadius = size * 0.04;
+        const bannerHeight = size * 0.15;
+        const arrowSize = size * 0.04;
+        const fontSize = size * 0.055;
+
+        let defs = '';
+        if (dropShadow) {
+            defs = `
+                <filter id="frameShadow" x="-10%" y="-10%" width="140%" height="140%">
+                    <feDropShadow dx="3" dy="-3" stdDeviation="2" flood-color="rgba(143,138,138,0.5)"/>
+                </filter>
+            `;
+        }
+
+        // Outer frame rectangle
+        const frame = `
+            <g ${dropShadow ? 'filter="url(#frameShadow)"' : ''}>
+                <rect x="${padding}" y="${padding}"
+                      width="${size - padding * 2}" height="${size - padding * 2}"
+                      rx="${cornerRadius}" ry="${cornerRadius}"
+                      stroke="${color}" stroke-width="${frameWidth}" fill="none"/>
+            </g>
+        `;
+
+        // Text banner at bottom with arrow
+        const banner = `
+            <g>
+                <rect x="${padding}" y="${size - bannerHeight - padding}"
+                      width="${size - padding * 2}" height="${bannerHeight}"
+                      rx="${cornerRadius}" ry="${cornerRadius}"
+                      fill="${color}"/>
+                <!-- Arrow pointing up -->
+                <path d="M ${size / 2 - arrowSize} ${size - bannerHeight - padding}
+                         L ${size / 2} ${size - bannerHeight - padding - arrowSize}
+                         L ${size / 2 + arrowSize} ${size - bannerHeight - padding} Z"
+                      fill="${color}"/>
+            </g>
+        `;
+
+        const textElement = `
+            <text x="${size / 2}" y="${size - bannerHeight / 2 - padding + fontSize * 0.35}"
+                  font-family="Arial, sans-serif"
+                  font-size="${fontSize}"
+                  font-weight="bold"
+                  fill="${textColor}"
+                  text-anchor="middle">
+                ${this.escapeXml(text)}
+            </text>
+        `;
+
+        return { beforeQR: frame, afterQR: banner + textElement, defs };
+    }
+
+    /**
+     * Rectangular frame with text at top
+     * Matches Laravel's rect-frame-text-top.svg template
+     */
+    createRectFrameTextTopFrame(frameInfo, size, qrSize) {
+        const { color, textColor, text, dropShadow } = frameInfo;
+        const padding = size * 0.04;
+        const frameWidth = size * 0.015;
+        const cornerRadius = size * 0.04;
+        const bannerHeight = size * 0.15;
+        const arrowSize = size * 0.04;
+        const fontSize = size * 0.055;
+
+        let defs = '';
+        if (dropShadow) {
+            defs = `
+                <filter id="frameShadow" x="-10%" y="-10%" width="140%" height="140%">
+                    <feDropShadow dx="3" dy="3" stdDeviation="2" flood-color="rgba(143,138,138,0.5)"/>
+                </filter>
+            `;
+        }
+
+        // Outer frame rectangle
+        const frame = `
+            <g ${dropShadow ? 'filter="url(#frameShadow)"' : ''}>
+                <rect x="${padding}" y="${padding}"
+                      width="${size - padding * 2}" height="${size - padding * 2}"
+                      rx="${cornerRadius}" ry="${cornerRadius}"
+                      stroke="${color}" stroke-width="${frameWidth}" fill="none"/>
+            </g>
+        `;
+
+        // Text banner at top with arrow
+        const banner = `
+            <g>
+                <rect x="${padding}" y="${padding}"
+                      width="${size - padding * 2}" height="${bannerHeight}"
+                      rx="${cornerRadius}" ry="${cornerRadius}"
+                      fill="${color}"/>
+                <!-- Arrow pointing down -->
+                <path d="M ${size / 2 - arrowSize} ${padding + bannerHeight}
+                         L ${size / 2} ${padding + bannerHeight + arrowSize}
+                         L ${size / 2 + arrowSize} ${padding + bannerHeight} Z"
+                      fill="${color}"/>
+            </g>
+        `;
+
+        const textElement = `
+            <text x="${size / 2}" y="${padding + bannerHeight / 2 + fontSize * 0.35}"
+                  font-family="Arial, sans-serif"
+                  font-size="${fontSize}"
+                  font-weight="bold"
+                  fill="${textColor}"
+                  text-anchor="middle">
+                ${this.escapeXml(text)}
+            </text>
+        `;
+
+        return { beforeQR: frame + banner + textElement, afterQR: '', defs };
+    }
+
+    /**
+     * Four corners decorative frame with text at top
+     */
+    createFourCornersTopFrame(frameInfo, size, qrSize) {
+        const { color, textColor, text, dropShadow } = frameInfo;
+        const cornerSize = size * 0.08;
+        const padding = size * 0.05;
+        const textY = padding + size * 0.06;
+        const fontSize = size * 0.05;
+
+        let defs = '';
+        if (dropShadow) {
+            defs = this.createDropShadowDef('frameShadow');
+        }
+
+        const corners = `
+            <!-- Top-left corner (offset down for text) -->
+            <path d="M ${padding} ${padding + fontSize * 2 + cornerSize} L ${padding} ${padding + fontSize * 2} L ${padding + cornerSize} ${padding + fontSize * 2}"
+                  stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <!-- Top-right corner (offset down for text) -->
+            <path d="M ${size - padding - cornerSize} ${padding + fontSize * 2} L ${size - padding} ${padding + fontSize * 2} L ${size - padding} ${padding + fontSize * 2 + cornerSize}"
+                  stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <!-- Bottom-left corner -->
+            <path d="M ${padding} ${size - padding - cornerSize} L ${padding} ${size - padding} L ${padding + cornerSize} ${size - padding}"
+                  stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <!-- Bottom-right corner -->
+            <path d="M ${size - padding - cornerSize} ${size - padding} L ${size - padding} ${size - padding} L ${size - padding} ${size - padding - cornerSize}"
+                  stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round"/>
+        `;
+
+        const textElement = `
+            <text x="${size / 2}" y="${textY}"
+                  font-family="Arial, sans-serif"
+                  font-size="${fontSize}"
+                  font-weight="bold"
+                  fill="${textColor}"
+                  text-anchor="middle">
+                ${this.escapeXml(text)}
+            </text>
+        `;
+
+        return { beforeQR: textElement + corners, afterQR: '', defs };
+    }
+
+    /**
+     * Coupon style frame with perforated edges
+     * Matches Laravel's coupon.svg template
+     */
+    createCouponFrame(frameInfo, size, qrSize) {
+        const { color, textColor, text, dropShadow } = frameInfo;
+        const padding = size * 0.05;
+        const notchRadius = size * 0.025;
+        const notchSpacing = size * 0.08;
+        const fontSize = size * 0.045;
+        const cornerRadius = size * 0.03;
+
+        let defs = '';
+        if (dropShadow) {
+            defs = this.createDropShadowDef('frameShadow');
+        }
+
+        // Create left edge with notches
+        let leftNotches = '';
+        let rightNotches = '';
+        const numNotches = Math.floor((size - padding * 2) / notchSpacing);
+        for (let i = 1; i < numNotches; i++) {
+            const y = padding + i * notchSpacing;
+            leftNotches += `<circle cx="${padding}" cy="${y}" r="${notchRadius}" fill="white"/>`;
+            rightNotches += `<circle cx="${size - padding}" cy="${y}" r="${notchRadius}" fill="white"/>`;
+        }
+
+        // Coupon background
+        const couponBg = `
+            <g ${dropShadow ? 'filter="url(#frameShadow)"' : ''}>
+                <rect x="${padding}" y="${padding}"
+                      width="${size - padding * 2}" height="${size - padding * 2}"
+                      rx="${cornerRadius}" ry="${cornerRadius}"
+                      fill="${color}"/>
+                <!-- Notches on edges -->
+                ${leftNotches}
+                ${rightNotches}
+            </g>
+        `;
+
+        // Dashed line separator
+        const dashedLine = `
+            <line x1="${size * 0.15}" y1="${size / 2}"
+                  x2="${size * 0.85}" y2="${size / 2}"
+                  stroke="${textColor}" stroke-width="2" stroke-dasharray="8,4" opacity="0.5"/>
+        `;
+
+        const textElement = `
+            <text x="${size / 2}" y="${padding + size * 0.15}"
+                  font-family="Arial, sans-serif"
+                  font-size="${fontSize}"
+                  font-weight="bold"
+                  fill="${textColor}"
+                  text-anchor="middle">
+                ${this.escapeXml(text)}
+            </text>
+        `;
+
+        return { beforeQR: couponBg + dashedLine + textElement, afterQR: '', defs };
+    }
+
+    /**
+     * Pincode protected frame with lock icon
+     * Matches Laravel's pincode-protected.svg template
+     */
+    createPincodeProtectedFrame(frameInfo, size, qrSize) {
+        const { color, textColor, text, dropShadow } = frameInfo;
+        const lockSize = size * 0.12;
+        const lockX = size / 2;
+        const lockY = size * 0.08;
+        const fontSize = size * 0.04;
+        const textY = size - size * 0.05;
+
+        let defs = '';
+        if (dropShadow) {
+            defs = this.createDropShadowDef('frameShadow');
+        }
+
+        // Lock icon
+        const lockIcon = `
+            <g transform="translate(${lockX}, ${lockY})" ${dropShadow ? 'filter="url(#frameShadow)"' : ''}>
+                <!-- Lock shackle -->
+                <path d="M ${-lockSize * 0.3} ${lockSize * 0.1}
+                         L ${-lockSize * 0.3} ${-lockSize * 0.15}
+                         A ${lockSize * 0.3} ${lockSize * 0.3} 0 0 1 ${lockSize * 0.3} ${-lockSize * 0.15}
+                         L ${lockSize * 0.3} ${lockSize * 0.1}"
+                      stroke="${color}" stroke-width="${lockSize * 0.12}" stroke-linecap="round" fill="none"/>
+                <!-- Lock body -->
+                <rect x="${-lockSize * 0.4}" y="${lockSize * 0.05}"
+                      width="${lockSize * 0.8}" height="${lockSize * 0.6}"
+                      rx="${lockSize * 0.08}" fill="${color}"/>
+                <!-- Keyhole -->
+                <circle cx="0" cy="${lockSize * 0.3}" r="${lockSize * 0.1}" fill="${textColor}"/>
+                <rect x="${-lockSize * 0.05}" y="${lockSize * 0.28}"
+                      width="${lockSize * 0.1}" height="${lockSize * 0.2}" fill="${textColor}"/>
+            </g>
+        `;
+
+        const textElement = `
+            <text x="${size / 2}" y="${textY}"
+                  font-family="Arial, sans-serif"
+                  font-size="${fontSize}"
+                  font-weight="bold"
+                  fill="${textColor}"
+                  text-anchor="middle">
+                ${this.escapeXml(text)}
+            </text>
+        `;
+
+        return { beforeQR: lockIcon, afterQR: textElement, defs };
+    }
+
+    /**
+     * QR Code details frame
+     * Matches Laravel's qrcode-details.svg template
+     */
+    createQRCodeDetailsFrame(frameInfo, size, qrSize) {
+        const { color, textColor, text, dropShadow } = frameInfo;
+        const padding = size * 0.03;
+        const badgeSize = size * 0.1;
+        const fontSize = size * 0.035;
+        const textY = size - size * 0.04;
+
+        let defs = '';
+        if (dropShadow) {
+            defs = this.createDropShadowDef('frameShadow');
+        }
+
+        // Corner badge with "QR" text
+        const badge = `
+            <g ${dropShadow ? 'filter="url(#frameShadow)"' : ''}>
+                <circle cx="${size - padding - badgeSize / 2}" cy="${padding + badgeSize / 2}"
+                        r="${badgeSize / 2}" fill="${color}"/>
+                <text x="${size - padding - badgeSize / 2}" y="${padding + badgeSize / 2 + fontSize * 0.35}"
+                      font-family="Arial, sans-serif"
+                      font-size="${fontSize}"
+                      font-weight="bold"
+                      fill="${textColor}"
+                      text-anchor="middle">
+                    QR
+                </text>
+            </g>
+        `;
+
+        // Info text at bottom
+        const textElement = `
+            <text x="${size / 2}" y="${textY}"
+                  font-family="Arial, sans-serif"
+                  font-size="${fontSize}"
+                  fill="${textColor}"
+                  text-anchor="middle">
+                ${this.escapeXml(text)}
+            </text>
+        `;
+
+        return { beforeQR: '', afterQR: badge + textElement, defs };
+    }
+
+    // ========================================
     // Helper Methods
     // ========================================
 
@@ -986,6 +1430,7 @@ class FrameProcessor extends BaseProcessor {
             'none',
             'scan-me',
             'four-corners-text-bottom',
+            'four-corners-text-top',
             'rounded-frame',
             'banner-bottom',
             'healthcare',
@@ -993,6 +1438,14 @@ class FrameProcessor extends BaseProcessor {
             'review-collector',
             'social-follow',
             'ticket',
+            // Laravel-style advanced shapes
+            'simple-text-bottom',
+            'simple-text-top',
+            'rect-frame-text-bottom',
+            'rect-frame-text-top',
+            'coupon',
+            'pincode-protected',
+            'qrcode-details',
         ];
     }
 

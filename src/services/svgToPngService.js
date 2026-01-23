@@ -43,18 +43,25 @@ class SvgToPngService {
 
             logger.debug(`Converting SVG to PNG: ${width}x${height}, bg=${JSON.stringify(bgColor)}`);
 
-            // Convert using Sharp
+            // Convert using Sharp with optimized settings
             const pngBuffer = await sharp(Buffer.from(processedSvg), {
-                // Increase density for better quality
-                density: 150,
+                // Density 72 is sufficient for screen display, 150 was overkill
+                density: 72,
+                // Limit concurrent operations for better throughput
+                limitInputPixels: false,
             })
                 .resize(width, height, {
                     fit: 'contain',
                     background: bgColor,
+                    // Use faster kernel for resize
+                    kernel: 'lanczos2',
                 })
                 .png({
                     quality: quality,
-                    compressionLevel: 9,
+                    // Level 6 is good balance of speed vs size (9 was too slow)
+                    compressionLevel: 6,
+                    // Use adaptive filtering for better compression
+                    adaptiveFiltering: true,
                 })
                 .toBuffer();
 

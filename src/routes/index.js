@@ -1,10 +1,14 @@
 /**
- * API Routes
+ * API Routes (Refactored)
  *
  * QR Support Backend Routes
- * Architecture: Flutter → Node.js → Laravel (SVG) → Preprocessor → Sharp (PNG) → Flutter
- *
- * V2 API: Direct QR generation without Laravel dependency
+ * 
+ * ARCHITECTURE UPDATE (v3.0):
+ * - ALL QR generation now goes through Laravel
+ * - This ensures Flutter QR codes are IDENTICAL to web QR codes
+ * - Node.js only handles SVG → PNG conversion
+ * 
+ * Flow: Flutter → Node.js → Laravel (SVG) → Preprocessor → Sharp (PNG) → Flutter
  */
 
 const express = require('express');
@@ -16,93 +20,147 @@ const proxyController = require('../controllers/proxyController');
 const qrV2Controller = require('../controllers/qrV2Controller');
 
 // ============================================================
-// V2 API Routes - Standalone QR generation (no Laravel dependency)
+// MAIN API Routes - Laravel Proxy (RECOMMENDED)
+// These routes ensure feature parity with web
 // ============================================================
 
-// Generate full QR code with all styling
+/**
+ * Main preview endpoint
+ * ALWAYS proxies to Laravel for full feature support
+ * 
+ * POST /api/qr/preview
+ */
+router.post('/qr/preview', previewController.generatePreview);
+
+/**
+ * Laravel-explicit endpoint (same as above, kept for compatibility)
+ * 
+ * POST /api/qr/preview/laravel
+ */
+router.post('/qr/preview/laravel', previewController.generateFromLaravel);
+
+/**
+ * Get supported capabilities
+ * 
+ * GET /api/qr/capabilities
+ */
+router.get('/qr/capabilities', previewController.getCapabilities);
+
+/**
+ * Debug endpoint - check Laravel connectivity
+ * 
+ * GET /api/qr/debug/laravel
+ */
+router.get('/qr/debug/laravel', previewController.debugLaravel);
+
+// ============================================================
+// Legacy endpoints - Still supported
+// ============================================================
+
+/**
+ * Direct SVG to PNG render
+ * 
+ * POST /api/qr/render
+ */
+router.post('/qr/render', qrController.renderQRCode);
+
+/**
+ * Get PNG by QR code ID
+ * 
+ * GET /api/qr/:id/png
+ */
+router.get('/qr/:id/png', qrController.getQRCodePng);
+
+/**
+ * Direct proxy to Laravel (with auth passthrough)
+ * 
+ * ALL /api/proxy/*
+ */
+router.all('/proxy/*', proxyController.proxyRequest);
+
+// ============================================================
+// V2 API Routes - Direct generation (for simple cases)
+// NOTE: For full feature parity, use the main /qr/preview endpoint
+// ============================================================
+
 router.post('/v2/qr/generate', qrV2Controller.generate);
-
-// Quick preview (optimized for speed)
 router.post('/v2/qr/preview', qrV2Controller.preview);
-
-// Get V2 capabilities
 router.get('/v2/qr/capabilities', qrV2Controller.getCapabilities);
-
-// Validate design before generation
 router.post('/v2/qr/validate', qrV2Controller.validateDesign);
-
-// Batch generation
 router.post('/v2/qr/batch', qrV2Controller.batch);
 
 // ============================================================
-// V1 API Routes - Laravel-dependent (legacy)
+// Feature discovery
 // ============================================================
 
-// QR Code rendering endpoints
-// Main preview endpoint - auto-detects if Laravel features are needed
-router.post('/qr/preview', previewController.generatePreview);
-
-// Laravel-explicit endpoint - always uses Laravel for full feature support
-router.post('/qr/preview/laravel', previewController.generateFromLaravel);
-
-// Get supported capabilities
-router.get('/qr/capabilities', previewController.getCapabilities);
-
-// Legacy endpoints
-router.post('/qr/render', qrController.renderQRCode);
-router.get('/qr/:id/png', qrController.getQRCodePng);
-
-// Direct proxy to Laravel (with auth passthrough)
-router.all('/proxy/*', proxyController.proxyRequest);
-
-// Feature discovery
 router.get('/features', (req, res) => {
     res.json({
         success: true,
         data: {
-            version: '2.0.0',
+            version: '3.0.0',
+            architecture: 'laravel_proxy',
+            description: 'All QR generation proxied to Laravel for feature parity with web',
             capabilities: {
                 svg_to_png: true,
-                laravel_conversion: true,
+                laravel_proxy: true,
                 svg_preprocessing: true,
-                standalone_generation: true,
                 caching: process.env.CACHE_ENABLED === 'true',
                 max_size: parseInt(process.env.MAX_PNG_SIZE) || 2048,
-                supported_formats: ['png', 'jpeg', 'webp'],
+                supported_formats: ['png'],
             },
-            endpoints: {
-                // V2 API - Standalone (recommended)
+            recommended_endpoints: {
+                preview: '/api/qr/preview (RECOMMENDED - uses Laravel)',
+                capabilities: '/api/qr/capabilities',
+                debug: '/api/qr/debug/laravel',
+            },
+            legacy_endpoints: {
                 v2_generate: '/api/v2/qr/generate',
                 v2_preview: '/api/v2/qr/preview',
-                v2_capabilities: '/api/v2/qr/capabilities',
-                v2_validate: '/api/v2/qr/validate',
-                v2_batch: '/api/v2/qr/batch',
-                // V1 API - Laravel-dependent (legacy)
-                preview: '/api/qr/preview',
-                preview_laravel: '/api/qr/preview/laravel',
-                capabilities: '/api/qr/capabilities',
                 render: '/api/qr/render',
                 png: '/api/qr/:id/png',
                 proxy: '/api/proxy/*',
             },
             laravel_features: [
-                'module_shapes',
-                'finder_patterns',
-                'finder_dots',
-                'colors',
-                'gradients',
-                'eye_colors',
-                'logo_embedding',
-                'advanced_shapes',
-                'outlined_shapes',
+                'All 60+ module shapes',
+                'All finder patterns',
+                'All finder dot shapes',
+                'Full color customization',
+                'Linear and radial gradients',
+                'Eye colors',
+                'Logo embedding with all options',
+                'All stickers/advanced shapes',
+                'All 65+ themed/outlined shapes',
             ],
-            v2_features: [
-                'colors',
-                'gradients (linear/radial)',
-                'eye_colors',
-                'basic_module_shapes',
-                'basic_finder_patterns',
-            ],
+        },
+    });
+});
+
+// ============================================================
+// Health check
+// ============================================================
+
+router.get('/health', async (req, res) => {
+    const laravelService = require('../services/laravelService');
+
+    let laravelHealth = { healthy: false, error: 'Not checked' };
+    try {
+        laravelHealth = await laravelService.healthCheck();
+    } catch (e) {
+        laravelHealth = { healthy: false, error: e.message };
+    }
+
+    res.json({
+        success: true,
+        data: {
+            node: {
+                healthy: true,
+                version: '3.0.0',
+                uptime_seconds: Math.floor(process.uptime()),
+            },
+            laravel: laravelHealth,
+            cache: {
+                enabled: process.env.CACHE_ENABLED === 'true',
+            },
         },
     });
 });

@@ -1,17 +1,42 @@
 /**
- * Laravel Backend Service
+ * Laravel Backend Service (Refactored)
  *
- * Handles communication with the Laravel main backend.
- * Manages authentication token passthrough and request forwarding.
+ * Handles ALL communication with the Laravel main backend.
+ * This is the ONLY way Flutter QR codes are generated - ensuring feature parity with web.
+ * 
+ * Key improvements:
+ * - Always normalizes parameters (camelCase → snake_case)
+ * - Better SVG extraction with multiple fallback paths
+ * - Improved error handling and logging
+ * - Retry logic for transient failures
  */
 
 const axios = require('axios');
+const http = require('http');
+const https = require('https');
 const logger = require('../utils/logger');
+const { normalizeRequestForLaravel, normalizeDesignForLaravel } = require('../utils/parameterNormalizer');
+
+// HTTP agents with Keep-Alive for connection reuse (major performance boost)
+const httpAgent = new http.Agent({
+    keepAlive: true,
+    keepAliveMsecs: 30000,
+    maxSockets: 10,
+    maxFreeSockets: 5,
+});
+
+const httpsAgent = new https.Agent({
+    keepAlive: true,
+    keepAliveMsecs: 30000,
+    maxSockets: 10,
+    maxFreeSockets: 5,
+});
 
 class LaravelService {
     constructor() {
         this.baseUrl = process.env.LARAVEL_BACKEND_URL || 'http://localhost:8000';
-        this.timeout = parseInt(process.env.LARAVEL_API_TIMEOUT) || 30000;
+        this.timeout = parseInt(process.env.LARAVEL_API_TIMEOUT) || 60000;
+        this.maxRetries = parseInt(process.env.LARAVEL_MAX_RETRIES) || 2;
 
         this.client = axios.create({
             baseURL: this.baseUrl,
@@ -19,13 +44,17 @@ class LaravelService {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'Connection': 'keep-alive',
             },
+            // Use keep-alive agents for connection pooling
+            httpAgent: httpAgent,
+            httpsAgent: httpsAgent,
         });
 
-        // Request interceptor for logging
+        // Request interceptor - only log in debug mode to reduce overhead
         this.client.interceptors.request.use(
             (config) => {
-                logger.debug(`Laravel request: ${config.method?.toUpperCase()} ${config.url}`);
+                logger.debug(`→ Laravel: ${config.method?.toUpperCase()} ${config.url}`);
                 return config;
             },
             (error) => {
@@ -34,30 +63,32 @@ class LaravelService {
             }
         );
 
-        // Response interceptor for logging
+        // Response interceptor - only log errors at info level
         this.client.interceptors.response.use(
             (response) => {
-                logger.debug(`Laravel response: ${response.status} ${response.config.url}`);
+                logger.debug(`← Laravel: ${response.status}`);
                 return response;
             },
             (error) => {
                 const status = error.response?.status || 'unknown';
-                logger.error(`Laravel response error: ${status} - ${error.message}`);
+                const message = error.response?.data?.error?.message || error.message;
+                logger.error(`← Laravel error: ${status} - ${message}`);
                 return Promise.reject(error);
             }
         );
     }
 
     /**
-     * Make authenticated request to Laravel
+     * Make authenticated request to Laravel with retry logic
      *
      * @param {string} method - HTTP method
      * @param {string} endpoint - API endpoint
      * @param {object} data - Request data
      * @param {string} authToken - Bearer token
+     * @param {number} retryCount - Current retry attempt
      * @returns {Promise<object>} Response data
      */
-    async request(method, endpoint, data = null, authToken = null) {
+    async request(method, endpoint, data = null, authToken = null, retryCount = 0) {
         const config = {
             method,
             url: endpoint,
@@ -82,12 +113,25 @@ class LaravelService {
             const response = await this.client.request(config);
             return response.data;
         } catch (error) {
+            // Retry on timeout or 5xx errors
+            if (retryCount < this.maxRetries) {
+                const isRetryable = error.code === 'ECONNABORTED' ||
+                    error.code === 'ETIMEDOUT' ||
+                    (error.response?.status >= 500 && error.response?.status < 600);
+
+                if (isRetryable) {
+                    logger.warn(`Retrying Laravel request (attempt ${retryCount + 1}/${this.maxRetries}): ${endpoint}`);
+                    await this.delay(1000 * (retryCount + 1)); // Exponential backoff
+                    return this.request(method, endpoint, data, authToken, retryCount + 1);
+                }
+            }
+
             if (error.response) {
                 // Laravel returned an error response
                 const laravelError = {
                     status: error.response.status,
                     data: error.response.data,
-                    message: error.response.data?.message || error.message,
+                    message: error.response.data?.message || error.response.data?.error?.message || error.message,
                 };
                 throw laravelError;
             }
@@ -96,150 +140,120 @@ class LaravelService {
     }
 
     /**
-     * Get QR code preview from Laravel v2 API
-     *
-     * @param {object} previewData - Preview request data
-     * @param {string} authToken - Optional auth token
-     * @returns {Promise<object>} Preview response
+     * Delay helper for retry logic
      */
-    async getPreview(previewData, authToken = null) {
-        return this.request('POST', '/api/flutter/v2/preview', previewData, authToken);
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     /**
      * Get QR code preview SVG from Laravel Flutter endpoint
      *
-     * This endpoint returns SVG when format='svg' or 'both'.
-     * Response format varies - this method normalizes the response.
+     * This is the PRIMARY method for generating QR codes for Flutter.
+     * Always normalizes parameters to ensure Laravel receives correct format.
      *
-     * @param {object} previewData - Preview request data
+     * @param {object} previewData - Preview request data (may have camelCase keys)
      * @param {string} authToken - Optional auth token
      * @returns {Promise<object>} Normalized response with SVG content
      */
     async getPreviewSvg(previewData, authToken = null) {
-        // Ensure we request SVG format
-        const data = {
-            ...previewData,
-            output_format: 'svg',
-            format: 'svg',
-        };
+        // Normalize parameters for Laravel (camelCase → snake_case)
+        const normalizedData = normalizeRequestForLaravel(previewData);
+        normalizedData.output_format = 'svg';
+        normalizedData.format = 'svg';
 
-        logger.debug(`Requesting SVG from Laravel: ${JSON.stringify(data)}`);
+        try {
+            const response = await this.request('POST', '/api/flutter/preview', normalizedData, authToken);
 
-        const response = await this.request('POST', '/api/flutter/preview', data, authToken);
+            const normalized = {
+                success: response.success,
+                data: this.extractSvgFromResponse(response),
+                raw: response,
+            };
 
-        console.log('\n🔍 RAW LARAVEL RESPONSE:');
-        console.log('Type:', typeof response);
-        console.log('Keys:', Object.keys(response).join(', '));
-        console.log('Full response:', JSON.stringify(response, null, 2).substring(0, 500));
-        console.log('====\n');
+            if (!normalized.data?.svg) {
+                logger.error('Failed to extract SVG from Laravel response');
+            }
 
-        // Normalize the response to ensure SVG is accessible
-        const normalized = {
-            success: response.success,
-            data: this.extractSvgFromResponse(response),
-            raw: response,
-        };
-
-        logger.debug(`Laravel SVG response normalized: success=${normalized.success}, hasSvg=${!!normalized.data?.svg}`);
-
-        return normalized;
+            return normalized;
+        } catch (error) {
+            logger.error(`Laravel preview error: ${error.message}`);
+            throw error;
+        }
     }
 
     /**
      * Extract SVG content from various Laravel response formats
      *
-     * Laravel might return SVG in different ways:
-     * - response.data.svg
-     * - response.data.images.svg
-     * - response.preview (string - the SVG directly!)
-     * - response.preview.svg
-     * - response.svg (direct)
+     * Laravel might return SVG in different ways depending on the endpoint version.
+     * This method handles ALL known formats.
      *
      * @param {object} response - Laravel API response
      * @returns {object} Normalized data object with svg property
      */
     extractSvgFromResponse(response) {
-        console.log('\n🔍 === EXTRACTION DEBUG ===');
-        console.log('Response keys:', Object.keys(response));
-        console.log('Has preview?:', !!response.preview);
-        console.log('Preview type:', typeof response.preview);
-        if (response.preview) {
-            console.log('Preview keys:', Object.keys(response.preview));
-            console.log('Has preview.svg?:', !!response.preview.svg);
-            if (response.preview.svg) {
-                console.log('preview.svg length:', response.preview.svg.length);
-            }
-        }
-        console.log('=========================\n');
-
-        logger.debug('===extractSvgFromResponse called===');
-        logger.debug('Response type:', typeof response);
-        logger.debug('Response keys:', Object.keys(response).join(', '));
+        logger.debug('Extracting SVG from response...');
 
         let svg = null;
 
-        // Try different paths where SVG might be
-        if (response.data?.svg) {
-            console.log('✅ FOUND: response.data.svg');
-            svg = response.data.svg;
-        } else if (response.data?.images?.svg) {
-            logger.debug('✅ SVG found at response.data.images.svg');
-            svg = response.data.images.svg;
-        } else if (response.data?.images?.svg_base64) {
-            logger.debug('✅ SVG found at response.data.images.svg_base64 (base64)');
-            svg = Buffer.from(response.data.images.svg_base64, 'base64').toString('utf-8');
+        // Method 1: response.preview.svg (primary format for /api/flutter/preview)
+        if (response.preview?.svg) {
+            logger.debug('✅ SVG found at response.preview.svg');
+            svg = response.preview.svg;
         }
-        // CHECK IF PREVIEW IS THE SVG STRING DIRECTLY
+        // Method 2: response.preview is the SVG string directly
         else if (typeof response.preview === 'string' && response.preview.includes('<svg')) {
             logger.debug('✅ SVG found as string in response.preview');
             svg = response.preview;
         }
-        // THIS IS THE KEY CHECK FOR LARAVEL!
-        else if (response.preview?.svg) {
-            logger.info('✅✅✅ SVG FOUND at response.preview.svg ✅✅✅');
-            logger.debug('SVG length:', response.preview.svg.length);
-            svg = response.preview.svg;
-        } else if (response.preview?.images?.svg) {
-            logger.debug('✅ SVG found at response.preview.images.svg');
-            svg = response.preview.images.svg;
-        } else if (response.preview?.images?.svg_base64) {
-            logger.debug('✅ SVG found at response.preview.images.svg_base64 (base64)');
-            svg = Buffer.from(response.preview.images.svg_base64, 'base64').toString('utf-8');
-        } else if (response.svg) {
+        // Method 3: response.data.svg
+        else if (response.data?.svg) {
+            logger.debug('✅ SVG found at response.data.svg');
+            svg = response.data.svg;
+        }
+        // Method 4: response.data.images.svg
+        else if (response.data?.images?.svg) {
+            logger.debug('✅ SVG found at response.data.images.svg');
+            svg = response.data.images.svg;
+        }
+        // Method 5: response.data.images.svg_base64 (base64 encoded)
+        else if (response.data?.images?.svg_base64) {
+            logger.debug('✅ SVG found at response.data.images.svg_base64 (base64)');
+            svg = Buffer.from(response.data.images.svg_base64, 'base64').toString('utf-8');
+        }
+        // Method 6: response.svg (direct)
+        else if (response.svg) {
             logger.debug('✅ SVG found at response.svg');
             svg = response.svg;
-        } else if (response.images?.svg) {
+        }
+        // Method 7: response.images.svg
+        else if (response.images?.svg) {
             logger.debug('✅ SVG found at response.images.svg');
             svg = response.images.svg;
-        } else if (response.images?.svg_base64) {
-            logger.debug('✅ SVG found at response.images.svg_base64 (base64)');
-            svg = Buffer.from(response.images.svg_base64, 'base64').toString('utf-8');
+        }
+        // Method 8: Check for preview.images.svg
+        else if (response.preview?.images?.svg) {
+            logger.debug('✅ SVG found at response.preview.images.svg');
+            svg = response.preview.images.svg;
         }
 
-        //  Debug what we're checking
-        if (!svg) {
-            logger.error('❌ NO SVG FOUND IN RESPONSE');
-            logger.error('  response.preview exists?', !!response.preview);
-            logger.error('  response.preview type:', typeof response.preview);
-            if (response.preview && typeof response.preview === 'object') {
-                logger.error('  response.preview.svg exists?', !!response.preview.svg);
-                logger.error('  response.preview keys:', Object.keys(response.preview).join(', '));
-            }
-        }
-
-        // If SVG is base64 encoded (starts with PD94 which is <?x in base64)
-        if (svg && svg.startsWith('PD94')) {
+        // Handle base64 encoded SVG (PD94=<?xml, PHN2=<svg, PD9=general XML)
+        if (svg && (svg.startsWith('PD94') || svg.startsWith('PHN2') || svg.startsWith('PD9'))) {
             logger.debug('SVG is base64 encoded, decoding...');
             svg = Buffer.from(svg, 'base64').toString('utf-8');
         }
 
         if (!svg) {
-            logger.warn('No SVG found in Laravel response. Response keys: ' + Object.keys(response).join(', '));
-            if (response.preview) {
-                logger.warn('Preview type: ' + typeof response.preview);
-                logger.warn('Preview preview (first 100 chars): ' + String(response.preview).substring(0, 100));
-            }
+            logger.error('❌ NO SVG FOUND IN RESPONSE');
+            logger.error('Response structure:', JSON.stringify({
+                hasPreview: !!response.preview,
+                previewType: typeof response.preview,
+                previewKeys: response.preview && typeof response.preview === 'object'
+                    ? Object.keys(response.preview) : 'N/A',
+                hasData: !!response.data,
+                dataKeys: response.data ? Object.keys(response.data) : 'N/A',
+                topLevelKeys: Object.keys(response),
+            }));
         }
 
         return {
@@ -248,12 +262,12 @@ class LaravelService {
                 svg,
                 svg_base64: svg ? Buffer.from(svg).toString('base64') : null,
             },
-            meta: response.meta || response.data?.meta || {},
+            meta: response.meta || response.preview?.meta || response.data?.meta || {},
         };
     }
 
     /**
-     * Get QR code SVG from Laravel
+     * Get QR code SVG from Laravel (for saved QR codes)
      *
      * @param {number} id - QR code ID
      * @param {string} authToken - Auth token
@@ -301,6 +315,15 @@ class LaravelService {
         const endpoint = req.path.replace(/^\/api\/proxy/, '');
         const authToken = req.headers['authorization'];
 
+        // Normalize design parameters if present in body
+        let body = req.body;
+        if (body?.design) {
+            body = {
+                ...body,
+                design: normalizeDesignForLaravel(body.design),
+            };
+        }
+
         const config = {
             method: req.method,
             url: endpoint,
@@ -311,8 +334,8 @@ class LaravelService {
             config.headers['Authorization'] = authToken;
         }
 
-        if (req.body && Object.keys(req.body).length > 0) {
-            config.data = req.body;
+        if (body && Object.keys(body).length > 0) {
+            config.data = body;
         }
 
         if (req.query && Object.keys(req.query).length > 0) {
@@ -328,16 +351,21 @@ class LaravelService {
     }
 
     /**
-     * Health check
+     * Health check - verify Laravel is accessible
      */
     async healthCheck() {
         try {
-            await this.client.get('/api/flutter/v2/health');
-            return { healthy: true };
+            const response = await this.client.get('/api/health', { timeout: 5000 });
+            return {
+                healthy: true,
+                status: response.data?.status || 'ok',
+                latency_ms: response.headers['x-response-time'] || 'unknown',
+            };
         } catch (error) {
             return {
                 healthy: false,
                 error: error.message,
+                code: error.code,
             };
         }
     }

@@ -76,6 +76,50 @@ class SVGPreprocessor {
     }
 
     /**
+     * Process SVG safely for complex stickers/shapes
+     * Skips destructive operations like transform/path fixing
+     */
+    processSafe(svgContent, design = {}) {
+        if (!svgContent || typeof svgContent !== 'string') {
+            throw new Error('Invalid SVG content');
+        }
+
+        let svg = svgContent;
+        logger.debug('Running SAFE SVG preprocessing for sticker...');
+
+        try {
+            // 1. XML Declaration (Essential)
+            svg = this.ensureXmlDeclaration(svg);
+
+            // 2. Dimensions (Essential)
+            svg = this.fixDimensions(svg);
+
+            // 3. Inline CSS (CRITICAL for stickers which use class-based styling)
+            svg = this.inlineCssStyles(svg);
+
+            // 4. Convert CSS to attributes (Sharp compatibility)
+            svg = this.convertCssToAttributes(svg);
+
+            // 5. Fix Color Formats (Safe)
+            svg = this.fixColors(svg);
+
+            // 6. Explicit Fills (Needed for background/foreground)
+            svg = this.ensureExplicitFills(svg, design);
+
+            // 7. Remove duplications (Safe)
+            svg = this.removeDuplicateAttributes(svg);
+
+            // SKIPPING: fixGradients, fixTransforms, fixPathData, removeUnsupportedFeatures
+            // These are the most likely to break complex sticker templates
+
+            return svg;
+        } catch (error) {
+            logger.error(`Safe SVG preprocessing error: ${error.message}`);
+            return svgContent;
+        }
+    }
+
+    /**
      * Ensure SVG has proper XML declaration
      */
     ensureXmlDeclaration(svg) {
@@ -458,6 +502,42 @@ class SVGPreprocessor {
     }
 
     /**
+     * Remove duplicate attributes from SVG elements
+     * Sharp/libvips will fail if an element has the same attribute defined twice
+     */
+    removeDuplicateAttributes(svg) {
+        // Match each element tag (opening tags with attributes)
+        return svg.replace(/<(\w+)\s+([^>]*?)(\/?>)/gi, (match, tagName, attrs, end) => {
+            if (!attrs || !attrs.trim()) {
+                return match;
+            }
+
+            // Parse all attributes
+            const attrMap = new Map();
+            const attrRegex = /(\S+)=["']([^"']*)["']/g;
+            let attrMatch;
+
+            while ((attrMatch = attrRegex.exec(attrs)) !== null) {
+                const [, name, value] = attrMatch;
+                // Keep the last occurrence of each attribute
+                attrMap.set(name.toLowerCase(), { name, value });
+            }
+
+            // Also handle attributes without quotes (like standalone attributes)
+            const standaloneAttrs = attrs.replace(/\S+=["'][^"']*["']/g, '').trim();
+
+            // Rebuild attributes string without duplicates
+            const uniqueAttrs = Array.from(attrMap.values())
+                .map(({ name, value }) => `${name}="${value}"`)
+                .join(' ');
+
+            const finalAttrs = [uniqueAttrs, standaloneAttrs].filter(Boolean).join(' ');
+
+            return `<${tagName} ${finalAttrs}${end}`;
+        });
+    }
+
+    /**
      * Get info about preprocessor capabilities
      */
     getInfo() {
@@ -469,6 +549,7 @@ class SVGPreprocessor {
                 'path-data-fix',
                 'color-normalization',
                 'dimension-fix',
+                'safe-mode',
             ],
             laravelFeatures: [
                 'module-shapes',
