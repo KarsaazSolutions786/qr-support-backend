@@ -372,8 +372,46 @@ class SVGPreprocessor {
 
     /**
      * Fix transform attributes for Sharp compatibility
+     * Handles transform-origin by converting to translate operations
      */
     fixTransforms(svg) {
+        // First, handle transform-origin by converting to translate operations
+        // Sharp/libvips doesn't support transform-origin, so we need to convert:
+        // transform="rotate(45) scale(0.5)" transform-origin="100 100"
+        // Into:
+        // transform="translate(100, 100) rotate(45) scale(0.5) translate(-100, -100)"
+        svg = svg.replace(
+            /<(\w+)([^>]*?)\s+transform=["']([^"']*)["']([^>]*?)\s+transform-origin=["']([^"']*)["']([^>]*?)(\/?>)/gi,
+            (match, tagName, before, transform, middle, origin, after, end) => {
+                const originParts = origin.trim().split(/[\s,]+/);
+                const ox = parseFloat(originParts[0]) || 0;
+                const oy = parseFloat(originParts[1] || originParts[0]) || 0;
+
+                // Wrap transform with translate operations
+                const newTransform = `translate(${ox}, ${oy}) ${transform} translate(${-ox}, ${-oy})`;
+
+                return `<${tagName}${before} transform="${newTransform}"${middle}${after}${end}`;
+            }
+        );
+
+        // Also handle when transform-origin comes BEFORE transform
+        svg = svg.replace(
+            /<(\w+)([^>]*?)\s+transform-origin=["']([^"']*)["']([^>]*?)\s+transform=["']([^"']*)["']([^>]*?)(\/?>)/gi,
+            (match, tagName, before, origin, middle, transform, after, end) => {
+                const originParts = origin.trim().split(/[\s,]+/);
+                const ox = parseFloat(originParts[0]) || 0;
+                const oy = parseFloat(originParts[1] || originParts[0]) || 0;
+
+                // Wrap transform with translate operations
+                const newTransform = `translate(${ox}, ${oy}) ${transform} translate(${-ox}, ${-oy})`;
+
+                return `<${tagName}${before}${middle} transform="${newTransform}"${after}${end}`;
+            }
+        );
+
+        // Remove any remaining standalone transform-origin attributes (shouldn't happen but cleanup)
+        svg = svg.replace(/\s+transform-origin=["'][^"']*["']/gi, '');
+
         // Ensure transforms have proper format
         svg = svg.replace(/transform=["']([^"']*)["']/gi, (match, transform) => {
             // Fix common transform issues

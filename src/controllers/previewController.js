@@ -18,6 +18,52 @@ const logger = require('../utils/logger');
 const { normalizeRequestForLaravel, getDesignParam } = require('../utils/parameterNormalizer');
 
 /**
+ * Fix transform-origin for Sharp/libvips compatibility
+ * Converts transform-origin to equivalent translate operations
+ *
+ * Sharp/libvips doesn't support the transform-origin CSS property, so we need to convert:
+ * transform="rotate(45) scale(0.5)" transform-origin="100 100"
+ * Into:
+ * transform="translate(100, 100) rotate(45) scale(0.5) translate(-100, -100)"
+ */
+function fixTransformOrigin(svg) {
+    // Handle transform-origin that comes AFTER transform
+    svg = svg.replace(
+        /(<\w+[^>]*?)\s+transform=["']([^"']*)["']([^>]*?)\s+transform-origin=["']([^"']*)["']([^>]*?>)/gi,
+        (match, before, transform, middle, origin, after) => {
+            const originParts = origin.trim().split(/[\s,]+/);
+            const ox = parseFloat(originParts[0]) || 0;
+            const oy = parseFloat(originParts[1] || originParts[0]) || 0;
+
+            // Wrap transform with translate operations
+            const newTransform = `translate(${ox}, ${oy}) ${transform} translate(${-ox}, ${-oy})`;
+
+            return `${before} transform="${newTransform}"${middle}${after}`;
+        }
+    );
+
+    // Handle transform-origin that comes BEFORE transform
+    svg = svg.replace(
+        /(<\w+[^>]*?)\s+transform-origin=["']([^"']*)["']([^>]*?)\s+transform=["']([^"']*)["']([^>]*?>)/gi,
+        (match, before, origin, middle, transform, after) => {
+            const originParts = origin.trim().split(/[\s,]+/);
+            const ox = parseFloat(originParts[0]) || 0;
+            const oy = parseFloat(originParts[1] || originParts[0]) || 0;
+
+            // Wrap transform with translate operations
+            const newTransform = `translate(${ox}, ${oy}) ${transform} translate(${-ox}, ${-oy})`;
+
+            return `${before}${middle} transform="${newTransform}"${after}`;
+        }
+    );
+
+    // Remove any remaining standalone transform-origin attributes
+    svg = svg.replace(/\s+transform-origin=["'][^"']*["']/gi, '');
+
+    return svg;
+}
+
+/**
  * Generate preview PNG from design data
  *
  * POST /api/qr/preview
@@ -108,11 +154,16 @@ exports.generatePreview = async (req, res) => {
             if (laravelResponse.success !== false && laravelResponse.data?.svg) {
                 const svgContent = laravelResponse.data.svg;
 
-                // Add XML declaration if missing
-                let processedSvg = svgContent;
+                // Only apply transform-origin fix (needed for logo centering)
+                // Skip full SVG preprocessing which can corrupt embedded base64 image data
+                let processedSvg = fixTransformOrigin(svgContent);
+
+                // Ensure XML declaration
                 if (!processedSvg.startsWith('<?xml')) {
                     processedSvg = '<?xml version="1.0" encoding="UTF-8"?>\n' + processedSvg;
                 }
+
+                logger.debug(`[${requestId}] SVG transform-origin fixed for Sharp compatibility`);
 
                 // Convert to PNG
                 pngBuffer = await svgToPngService.convert(processedSvg, {
