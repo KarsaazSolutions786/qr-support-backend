@@ -7,11 +7,10 @@
  * This ensures Flutter QR codes look IDENTICAL to web QR codes.
  *
  * Architecture:
- * Flutter → Node.js → Laravel (SVG) → SVGPreprocessor → Sharp (PNG) → Flutter
+ * Flutter → Node.js → Laravel (SVG) → Sharp (PNG) → Flutter
  */
 
 const laravelService = require('../services/laravelService');
-const svgPreprocessor = require('../services/svgPreprocessor');
 const svgToPngService = require('../services/svgToPngService');
 const cacheService = require('../services/cacheService');
 const logger = require('../utils/logger');
