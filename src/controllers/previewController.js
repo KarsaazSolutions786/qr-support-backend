@@ -15,51 +15,54 @@ const svgToPngService = require('../services/svgToPngService');
 const cacheService = require('../services/cacheService');
 const logger = require('../utils/logger');
 const { normalizeRequestForLaravel, getDesignParam } = require('../utils/parameterNormalizer');
+const { DOMParser, XMLSerializer } = require('@xmldom/xmldom');
 
 /**
  * Fix transform-origin for Sharp/libvips compatibility
- * Converts transform-origin to equivalent translate operations
+ * Uses proper XML DOM parsing instead of regex to avoid corrupting
+ * base64-encoded image data or other embedded content.
  *
- * Sharp/libvips doesn't support the transform-origin CSS property, so we need to convert:
+ * Sharp/libvips doesn't support the transform-origin CSS property, so we convert:
  * transform="rotate(45) scale(0.5)" transform-origin="100 100"
  * Into:
  * transform="translate(100, 100) rotate(45) scale(0.5) translate(-100, -100)"
  */
 function fixTransformOrigin(svg) {
-    // Handle transform-origin that comes AFTER transform
-    svg = svg.replace(
-        /(<\w+[^>]*?)\s+transform=["']([^"']*)["']([^>]*?)\s+transform-origin=["']([^"']*)["']([^>]*?>)/gi,
-        (match, before, transform, middle, origin, after) => {
-            const originParts = origin.trim().split(/[\s,]+/);
-            const ox = parseFloat(originParts[0]) || 0;
-            const oy = parseFloat(originParts[1] || originParts[0]) || 0;
+    try {
+        const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
 
-            // Wrap transform with translate operations
-            const newTransform = `translate(${ox}, ${oy}) ${transform} translate(${-ox}, ${-oy})`;
+        // Walk all elements in the document
+        function processNode(node) {
+            if (node.nodeType !== 1) return; // Element nodes only
 
-            return `${before} transform="${newTransform}"${middle}${after}`;
+            const origin = node.getAttribute('transform-origin');
+            if (origin) {
+                const originParts = origin.trim().split(/[\s,]+/);
+                const ox = parseFloat(originParts[0]) || 0;
+                const oy = parseFloat(originParts[1] || originParts[0]) || 0;
+
+                const existingTransform = node.getAttribute('transform') || '';
+                if (existingTransform) {
+                    const newTransform = `translate(${ox}, ${oy}) ${existingTransform} translate(${-ox}, ${-oy})`;
+                    node.setAttribute('transform', newTransform);
+                }
+
+                node.removeAttribute('transform-origin');
+            }
+
+            // Recurse into children
+            for (let i = 0; i < node.childNodes.length; i++) {
+                processNode(node.childNodes[i]);
+            }
         }
-    );
 
-    // Handle transform-origin that comes BEFORE transform
-    svg = svg.replace(
-        /(<\w+[^>]*?)\s+transform-origin=["']([^"']*)["']([^>]*?)\s+transform=["']([^"']*)["']([^>]*?>)/gi,
-        (match, before, origin, middle, transform, after) => {
-            const originParts = origin.trim().split(/[\s,]+/);
-            const ox = parseFloat(originParts[0]) || 0;
-            const oy = parseFloat(originParts[1] || originParts[0]) || 0;
-
-            // Wrap transform with translate operations
-            const newTransform = `translate(${ox}, ${oy}) ${transform} translate(${-ox}, ${-oy})`;
-
-            return `${before}${middle} transform="${newTransform}"${after}`;
-        }
-    );
-
-    // Remove any remaining standalone transform-origin attributes
-    svg = svg.replace(/\s+transform-origin=["'][^"']*["']/gi, '');
-
-    return svg;
+        processNode(doc.documentElement);
+        return new XMLSerializer().serializeToString(doc);
+    } catch (e) {
+        // If XML parsing fails, return original SVG unchanged
+        logger.warn(`fixTransformOrigin: XML parse failed, returning original SVG: ${e.message}`);
+        return svg;
+    }
 }
 
 /**
@@ -87,11 +90,16 @@ exports.generatePreview = async (req, res) => {
             type = 'url',
             data = {},
             design = {},
-            size = 512,
             quality = 90,
         } = req.body;
 
-        logger.debug(`[${requestId}] Type: ${type}, Size: ${size}`);
+        // SECURITY: Clamp image size to prevent memory exhaustion DoS
+        const MAX_PNG_SIZE = parseInt(process.env.MAX_PNG_SIZE) || 2048;
+        const MIN_PNG_SIZE = 64;
+        const rawSize = parseInt(req.body.size) || 512;
+        const size = Math.max(MIN_PNG_SIZE, Math.min(rawSize, MAX_PNG_SIZE));
+
+        logger.debug(`[${requestId}] Type: ${type}, Size: ${size} (requested: ${rawSize})`);
 
         // Validate required fields
         if (!data || Object.keys(data).length === 0) {
@@ -319,10 +327,19 @@ exports.getCapabilities = async (req, res) => {
 
 /**
  * Debug endpoint to test Laravel connectivity
- * 
+ * SECURITY: Only available in non-production environments
+ *
  * GET /api/qr/debug/laravel
  */
 exports.debugLaravel = async (req, res) => {
+    // Block in production
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'Route not found' },
+        });
+    }
+
     try {
         const health = await laravelService.healthCheck();
 

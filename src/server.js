@@ -21,8 +21,12 @@ const PORT = process.env.PORT || 3000;
 
 // Security middleware
 app.use(helmet());
+// SECURITY: Restrict CORS to known origins (configure via ALLOWED_ORIGINS env var)
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '*').split(',').map(s => s.trim());
 app.use(cors({
-    origin: '*', // Allow Flutter app from any origin
+    origin: allowedOrigins.length === 1 && allowedOrigins[0] === '*'
+        ? true  // Allow all in dev (set ALLOWED_ORIGINS in production)
+        : allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-ID'],
 }));
@@ -41,8 +45,8 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// Body parsing
-app.use(express.json({ limit: '10mb' }));
+// Body parsing - SECURITY: Limit payload size to prevent DoS
+app.use(express.json({ limit: '500kb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging
