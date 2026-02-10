@@ -47,8 +47,8 @@ class SvgToPngService {
             const pngBuffer = await sharp(Buffer.from(processedSvg), {
                 // Density 72 is sufficient for screen display, 150 was overkill
                 density: 72,
-                // Limit concurrent operations for better throughput
-                limitInputPixels: false,
+                // Limit input to 16384x16384 pixels (268 megapixels) to prevent DoS
+                limitInputPixels: 268402689,
             })
                 .resize(width, height, {
                     fit: 'contain',
