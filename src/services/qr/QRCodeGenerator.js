@@ -158,9 +158,10 @@ class QRCodeGenerator {
             // Step 6: Build SVG from matrix and payload
             const svg = this.buildSVG(payload);
 
-            // Step 7: Convert to PNG if requested
-            const pngBuffer = await this.convertToPNG(svg, size, options);
-            const pngBase64 = pngBuffer.toString('base64');
+            // Step 7: PNG conversion disabled for Flutter (handled by Flutter Canvas)
+            // const pngBuffer = await this.convertToPNG(svg, size, options);
+            // const pngBase64 = pngBuffer.toString('base64');
+            const pngBase64 = null; // PNG generation handled in Flutter
 
             const generationTime = Date.now() - startTime;
             logger.info(`QR code generated in ${generationTime}ms`);
@@ -168,8 +169,8 @@ class QRCodeGenerator {
             return {
                 svg,
                 svgBase64: Buffer.from(svg).toString('base64'),
-                png: pngBuffer,
-                pngBase64,
+                // png: pngBuffer, // PNG generation handled in Flutter
+                // pngBase64, // PNG generation handled in Flutter
                 meta: {
                     type,
                     size,
@@ -471,46 +472,12 @@ class QRCodeGenerator {
     }
 
     /**
-     * Convert SVG to PNG
-     *
-     * @param {string} svg
-     * @param {number} size
-     * @param {Object} options
-     * @returns {Promise<Buffer>}
+     * Convert SVG to PNG (DISABLED for Flutter - use Flutter Canvas instead)
      */
-    async convertToPNG(svg, size, options = {}) {
-        const quality = Math.max(1, Math.min(100, options.quality || 90));
-        const transparent = options.transparent || false;
-
-        try {
-            // Configure Sharp for high quality output
-            const sharpInstance = sharp(Buffer.from(svg), {
-                density: 150, // Higher DPI for quality
-            });
-
-            // Resize if needed
-            sharpInstance.resize(size, size, {
-                fit: 'contain',
-                background: transparent ?
-                    { r: 0, g: 0, b: 0, alpha: 0 } :
-                    { r: 255, g: 255, b: 255, alpha: 1 },
-            });
-
-            // Convert to PNG
-            const pngBuffer = await sharpInstance
-                .png({
-                    compressionLevel: 9,
-                    quality,
-                })
-                .toBuffer();
-
-            return pngBuffer;
-
-        } catch (error) {
-            logger.error(`PNG conversion failed: ${error.message}`);
-            throw new Error(`Failed to convert SVG to PNG: ${error.message}`);
-        }
-    }
+    // async convertToPNG(svg, size, options = {}) {
+    //   // Sharp conversion removed for Flutter bundle
+    //   throw new Error('PNG conversion must be done in Flutter using Canvas API');
+    // }
 
     /**
      * Merge user design with defaults
