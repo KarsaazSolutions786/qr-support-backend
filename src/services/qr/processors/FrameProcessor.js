@@ -446,9 +446,9 @@ class FrameProcessor extends BaseProcessor {
     /**
      * Process the payload to prepare frame data
      * @param {Object} payload
-     * @returns {Promise<Object>}
+     * @returns {Object}
      */
-    async process(payload) {
+    process(payload) {
         const { design, size } = payload;
 
         // Check advancedShape (stickers), shape (outlined shapes like apple, bag), and frame

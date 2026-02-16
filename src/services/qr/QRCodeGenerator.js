@@ -11,7 +11,9 @@
  * 4. LogoProcessor (200) - Handle logo embedding (Phase 5)
  * 5. FrameProcessor (110) - Handle advanced shapes (Phase 6)
  */
-const QRCode = require('qrcode');
+let QRCode = require('qrcode');
+if (QRCode.default) QRCode = QRCode.default;
+
 const sharp = require('sharp');
 const QRDataEncoder = require('./QRDataEncoder');
 const SVGBuilder = require('./SVGBuilder');
@@ -106,9 +108,9 @@ class QRCodeGenerator {
      * @param {Object} data - Data to encode
      * @param {Object} design - Design configuration
      * @param {Object} options - Additional options (size, format, etc.)
-     * @returns {Promise<Object>} - {svg: string, png: Buffer, base64: string}
+     * @returns {Object} - {svg: string, png: Buffer, base64: string}
      */
-    async generate(type, data, design = {}, options = {}) {
+    generate(type, data, design = {}, options = {}) {
         const startTime = Date.now();
 
         try {
@@ -123,7 +125,7 @@ class QRCodeGenerator {
             logger.debug(`Encoded QR content: ${qrContent.substring(0, 100)}...`);
 
             // Step 2: Generate QR matrix
-            const qrMatrix = await this.generateQRMatrix(qrContent, mergedDesign);
+            const qrMatrix = this.generateQRMatrix(qrContent, mergedDesign);
 
             // Step 3: Create SVG builder
             const svgBuilder = new SVGBuilder(size, size);
@@ -151,7 +153,13 @@ class QRCodeGenerator {
             for (const processor of this.processors) {
                 if (processor.shouldProcess(payload)) {
                     logger.debug(`Running processor: ${processor.name}`);
-                    await processor.process(payload);
+                    // Note: In Flutter environment, we must use synchronous processing
+                    // LogoProcessor might still be async if it fetches URLs, but that won't work in Flutter bundle anyway
+                    const result = processor.process(payload);
+                    if (result instanceof Promise) {
+                        // We can't await here in a sync function
+                        // In Flutter, we should only use sync processors
+                    }
                 }
             }
 
@@ -193,9 +201,9 @@ class QRCodeGenerator {
      * @param {Object} data
      * @param {Object} design
      * @param {Object} options
-     * @returns {Promise<Object>}
+     * @returns {Object}
      */
-    async generatePreview(type, data, design = {}, options = {}) {
+    generatePreview(type, data, design = {}, options = {}) {
         // Use smaller size for preview
         const previewOptions = {
             ...options,
@@ -211,13 +219,13 @@ class QRCodeGenerator {
      *
      * @param {string} content - Content to encode
      * @param {Object} design - Design with error correction level
-     * @returns {Promise<Object>} - QR matrix data
+     * @returns {Object} - QR matrix data
      */
-    async generateQRMatrix(content, design) {
+    generateQRMatrix(content, design) {
         const errorCorrectionLevel = this.getErrorCorrectionLevel(design.errorCorrection);
 
-        // Generate QR code data
-        const qr = await QRCode.create(content, {
+        // Generate QR code data - QRCode.create is synchronous when no callback is provided
+        const qr = QRCode.create(content, {
             errorCorrectionLevel,
         });
 

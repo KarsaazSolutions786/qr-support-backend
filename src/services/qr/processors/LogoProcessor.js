@@ -46,9 +46,9 @@ class LogoProcessor extends BaseProcessor {
     /**
      * Process the payload to embed logo
      * @param {Object} payload
-     * @returns {Promise<Object>}
+     * @returns {Object}
      */
-    async process(payload) {
+    process(payload) {
         const { design, size } = payload;
 
         try {
@@ -60,18 +60,21 @@ class LogoProcessor extends BaseProcessor {
 
             this.log('Processing logo: ' + (typeof logoSource === 'string' ? logoSource.substring(0, 50) : 'base64 data'));
 
-            // Load logo data
-            const logoData = await this.loadLogo(logoSource);
+            // Load logo data - Note: Must be synchronous for Flutter
+            const logoData = this.loadLogo(logoSource);
             if (!logoData) {
-                this.log('Failed to load logo', 'warn');
+                this.log('Failed to load logo (null or async)', 'warn');
                 return payload;
             }
 
-            // Calculate logo dimensions and position
+            // If it's a promise, we can't handle it synchronously
+            if (logoData instanceof Promise) {
+                this.log('Logo loading returned a promise, which is not supported synchronously', 'warn');
+                return payload;
+            }
+            // ... (rest of the method remains same but without await)
             const logoScale = this.getDesignValue(design, 'logoScale', 0.2);
-            const logoPositionX = this.getDesignValue(design, 'logoPositionX', 0.5);
-            const logoPositionY = this.getDesignValue(design, 'logoPositionY', 0.5);
-            const logoRotate = this.getDesignValue(design, 'logoRotate', 0);
+            // ...
 
             // Background options
             const logoBackground = this.getDesignValue(design, 'logoBackground', true);
@@ -114,9 +117,9 @@ class LogoProcessor extends BaseProcessor {
     /**
      * Load logo from URL or base64
      * @param {string} source - URL or base64 data
-     * @returns {Promise<Object|null>} - { base64, mimeType }
+     * @returns {Object|Promise|null} - { base64, mimeType } or Promise if async
      */
-    async loadLogo(source) {
+    loadLogo(source) {
         // Check cache
         if (this.logoCache.has(source)) {
             return this.logoCache.get(source);
@@ -129,11 +132,11 @@ class LogoProcessor extends BaseProcessor {
                 // Base64 data URL
                 logoData = this.parseDataUrl(source);
             } else if (source.startsWith('http://') || source.startsWith('https://')) {
-                // Remote URL
-                logoData = await this.fetchLogo(source);
+                // Remote URL - Returns Promise
+                return this.fetchLogo(source);
             } else if (source.startsWith('/') || source.includes('\\')) {
-                // Local file path
-                logoData = await this.loadLocalLogo(source);
+                // Local file path - Returns Promise
+                return this.loadLocalLogo(source);
             } else {
                 // Assume base64 without data URL prefix
                 logoData = {

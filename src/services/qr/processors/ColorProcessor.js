@@ -9,7 +9,8 @@
  * - Handle eye colors (inner/outer)
  */
 const BaseProcessor = require('./BaseProcessor');
-const Color = require('color');
+let Color = require('color');
+if (Color.default) Color = Color.default;
 
 class ColorProcessor extends BaseProcessor {
     constructor() {
@@ -29,9 +30,9 @@ class ColorProcessor extends BaseProcessor {
     /**
      * Process the payload to apply colors
      * @param {Object} payload
-     * @returns {Promise<Object>}
+     * @returns {Object}
      */
-    async process(payload) {
+    process(payload) {
         const { design, svgBuilder } = payload;
 
         // Parse colors from design

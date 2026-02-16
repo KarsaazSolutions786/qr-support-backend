@@ -88,9 +88,9 @@ class ModuleProcessor extends BaseProcessor {
     /**
      * Process the payload to apply module shapes
      * @param {Object} payload
-     * @returns {Promise<Object>}
+     * @returns {Object}
      */
-    async process(payload) {
+    process(payload) {
         const { design, qrMatrix, moduleSize, startX, startY } = payload;
 
         console.log(`[ModuleProcessor] process called with design.module: ${design.module}, design.moduleShape: ${design.moduleShape}`);

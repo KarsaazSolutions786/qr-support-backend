@@ -36,9 +36,9 @@ class BaseProcessor {
      * Must be implemented by subclasses
      *
      * @param {Object} payload - The processing payload
-     * @returns {Promise<Object>} - Modified payload
+     * @returns {Object} - Modified payload
      */
-    async process(payload) {
+    process(payload) {
         throw new Error(`${this.name}: process() method must be implemented`);
     }
 

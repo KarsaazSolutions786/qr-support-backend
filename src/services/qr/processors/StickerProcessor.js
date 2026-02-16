@@ -83,9 +83,9 @@ class StickerProcessor extends BaseProcessor {
     /**
      * Process the payload to prepare sticker data
      * @param {Object} payload
-     * @returns {Promise<Object>}
+     * @returns {Object}
      */
-    async process(payload) {
+    process(payload) {
         const { design, size } = payload;
 
         // Also check advancedShape - Flutter sends sticker type via this field

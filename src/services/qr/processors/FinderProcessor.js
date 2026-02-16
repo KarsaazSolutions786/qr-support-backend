@@ -116,9 +116,9 @@ class FinderProcessor extends BaseProcessor {
     /**
      * Process the payload to apply finder pattern shapes
      * @param {Object} payload
-     * @returns {Promise<Object>}
+     * @returns {Object}
      */
-    async process(payload) {
+    process(payload) {
         const { design } = payload;
 
         console.log(`[FinderProcessor] process called with design.finder: ${design.finder}, design.finderDot: ${design.finderDot}`);

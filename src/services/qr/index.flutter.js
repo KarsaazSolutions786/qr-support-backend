@@ -27,7 +27,7 @@ class FlutterQREngine {
    * @param {Object} params - { type, data, design, options }
    * @returns {Object} - { svg, svgBase64, meta }
    */
-  async generateSVG(params) {
+  generateSVG(params) {
     try {
       const { type, data, design, options = {} } = params;
 
@@ -35,7 +35,7 @@ class FlutterQREngine {
       const qrPayload = this.encoder.encode(type, data);
 
       // Generate QR matrix
-      const qrMatrix = await this.generator.generateQRMatrix(
+      const qrMatrix = this.generator.generateQRMatrix(
         qrPayload,
         design
       );
@@ -70,15 +70,16 @@ class FlutterQREngine {
       // Execute processors sequentially
       for (const processor of processors) {
         if (processor.shouldProcess(payload)) {
-          await processor.process(payload);
+          // Note: In Flutter environment, we must use synchronous processing
+          processor.process(payload);
         }
       }
 
       // Build final SVG
       const svg = builder.build();
 
-      // Convert to base64
-      const svgBase64 = btoa(unescape(encodeURIComponent(svg)));
+      // Convert to base64 using Buffer (already available via webpack polyfill)
+      const svgBase64 = Buffer.from(svg).toString('base64');
 
       return {
         success: true,
@@ -179,7 +180,15 @@ class FlutterQREngine {
 // Export for webpack
 module.exports = FlutterQREngine;
 
-// Expose globally for flutter_js
-if (typeof window !== 'undefined') {
-  window.FlutterQREngine = FlutterQREngine;
-}
+// Expose globally for flutter_js (use robust detection)
+(function() {
+  var g = (typeof globalThis !== 'undefined') ? globalThis : 
+          (typeof window !== 'undefined') ? window : 
+          (typeof global !== 'undefined') ? global : 
+          (typeof self !== 'undefined') ? self : this;
+          
+  if (g) {
+    g.QREngine = FlutterQREngine;
+    g.FlutterQREngine = FlutterQREngine;
+  }
+})();
