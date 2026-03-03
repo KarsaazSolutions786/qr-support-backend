@@ -157,8 +157,7 @@ class QRCodeGenerator {
                     // LogoProcessor might still be async if it fetches URLs, but that won't work in Flutter bundle anyway
                     const result = processor.process(payload);
                     if (result instanceof Promise) {
-                        // We can't await here in a sync function
-                        // In Flutter, we should only use sync processors
+                        throw new Error(`Processor ${processor.constructor.name} returned a Promise in sync context. Use async processors only with generateAsync().`);
                     }
                 }
             }
@@ -320,7 +319,7 @@ class QRCodeGenerator {
         const moduleShape = payload.moduleShape || design.module || 'square';
         const paths = [];
 
-        console.log(`[QRCodeGenerator] buildSVG using moduleShape: ${moduleShape}`);
+        logger.debug(`[QRCodeGenerator] buildSVG using moduleShape: ${moduleShape}`);
 
         // Check if we need neighbor context (for classy shapes)
         const needsContext = ['classy', 'classy-rounded', 'classyRounded'].includes(moduleShape);
@@ -349,13 +348,13 @@ class QRCodeGenerator {
 
                         // Log first path to verify shape is correct
                         if (moduleCount === 1) {
-                            console.log(`[QRCodeGenerator] First module path (${moduleShape}): ${pathData.substring(0, 100)}...`);
+                            logger.debug(`[QRCodeGenerator] First module path (${moduleShape}): ${pathData.substring(0, 100)}...`);
                         }
                     }
                 }
             }
         }
-        console.log(`[QRCodeGenerator] Generated ${moduleCount} module paths`);
+        logger.debug(`[QRCodeGenerator] Generated ${moduleCount} module paths`);
 
         // Add all regular modules as a single path
         if (paths.length > 0) {

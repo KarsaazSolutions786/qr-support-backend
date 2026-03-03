@@ -121,7 +121,7 @@ class FinderProcessor extends BaseProcessor {
     process(payload) {
         const { design } = payload;
 
-        console.log(`[FinderProcessor] process called with design.finder: ${design.finder}, design.finderDot: ${design.finderDot}`);
+        this.log(`process called with design.finder: ${design.finder}, design.finderDot: ${design.finderDot}`);
 
         // Get finder shape
         const finderShape = this.normalizeShape(
@@ -141,8 +141,8 @@ class FinderProcessor extends BaseProcessor {
         payload.finderPathGenerator = this.getFinderPathGenerator(finderShape);
         payload.finderDotPathGenerator = this.getDotPathGenerator(finderDotShape);
 
-        console.log(`[FinderProcessor] Final finder shape: ${finderShape}, dot shape: ${finderDotShape}`);
-        console.log(`[FinderProcessor] Generator exists - finder: ${!!payload.finderPathGenerator}, dot: ${!!payload.finderDotPathGenerator}`);
+        this.log(`Final finder shape: ${finderShape}, dot shape: ${finderDotShape}`);
+        this.log(`Generator exists - finder: ${!!payload.finderPathGenerator}, dot: ${!!payload.finderDotPathGenerator}`);
         this.log('Finder shape: ' + finderShape + ', dot shape: ' + finderDotShape);
 
         return payload;
@@ -158,17 +158,17 @@ class FinderProcessor extends BaseProcessor {
 
         // Try normalized version first
         if (shapeMap[normalized]) {
-            console.log(`[FinderProcessor] Shape resolved: ${shape} → ${normalized}`);
+            this.log(`Shape resolved: ${shape} -> ${normalized}`);
             return normalized;
         }
 
         // Try original value
         if (shapeMap[shape]) {
-            console.log(`[FinderProcessor] Shape resolved (direct): ${shape}`);
+            this.log(`Shape resolved (direct): ${shape}`);
             return shape;
         }
 
-        console.log(`[FinderProcessor] Unknown finder shape: ${shape} (normalized: ${normalized}), falling back to square`);
+        this.log(`Unknown finder shape: ${shape} (normalized: ${normalized}), falling back to square`, 'warn');
         this.log('Unknown finder shape: ' + shape + ', falling back to square', 'warn');
         return 'square';
     }
@@ -258,7 +258,7 @@ class FinderProcessor extends BaseProcessor {
         return (x, y, size) => {
             const config = LaravelPaths.finders[shapeName];
             if (!config) {
-                console.warn(`[FinderProcessor] Laravel finder shape '${shapeName}' not found`);
+                this.log(`Laravel finder shape '${shapeName}' not found`, 'warn');
                 return this.createSquareFinder(x, y, size);
             }
 
@@ -301,7 +301,7 @@ class FinderProcessor extends BaseProcessor {
         const generator = (x, y, size) => {
             const config = LaravelPaths.finders[shapeName];
             if (!config) {
-                console.warn(`[FinderProcessor] Laravel finder shape '${shapeName}' not found`);
+                this.log(`Laravel finder shape '${shapeName}' not found`, 'warn');
                 return this.createSquareFinder(x, y, size);
             }
 
@@ -351,7 +351,7 @@ class FinderProcessor extends BaseProcessor {
                 if (LaravelPaths.finders[shapeName]) {
                     // logic handled by || above
                 } else {
-                    console.warn(`[FinderProcessor] Laravel dot shape '${shapeName}' not found`);
+                    this.log(`Laravel dot shape '${shapeName}' not found`, 'warn');
                     return this.createSquareDot(x, y, size);
                 }
             }
@@ -479,7 +479,7 @@ class FinderProcessor extends BaseProcessor {
      * Eye-shaped finder pattern (pointed oval/almond shape)
      */
     createEyeShapedFinder(x, y, size) {
-        console.log(`[FinderProcessor] createEyeShapedFinder called: x=${x}, y=${y}, size=${size}`);
+        this.log(`createEyeShapedFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
         const cy = y + size / 2;
         const rx = size * 0.5;  // Horizontal radius
@@ -498,7 +498,7 @@ class FinderProcessor extends BaseProcessor {
      * Octagon finder pattern
      */
     createOctagonFinder(x, y, size) {
-        console.log(`[FinderProcessor] createOctagonFinder called: x=${x}, y=${y}, size=${size}`);
+        this.log(`createOctagonFinder called: x=${x}, y=${y}, size=${size}`);
         const cut = size * 0.29; // Corner cut amount (about 1/3)
 
         const path = `M ${x + cut} ${y} ` +
@@ -516,7 +516,7 @@ class FinderProcessor extends BaseProcessor {
      * Whirlpool finder pattern (rounded square with slight rotation effect)
      */
     createWhirlpoolFinder(x, y, size) {
-        console.log(`[FinderProcessor] createWhirlpoolFinder called: x=${x}, y=${y}, size=${size}`);
+        this.log(`createWhirlpoolFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
         const cy = y + size / 2;
         const r = size * 0.45;
@@ -535,7 +535,7 @@ class FinderProcessor extends BaseProcessor {
      * Water-drop finder pattern (teardrop shape)
      */
     createWaterDropFinder(x, y, size) {
-        console.log(`[FinderProcessor] createWaterDropFinder called: x=${x}, y=${y}, size=${size}`);
+        this.log(`createWaterDropFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
         const r = size * 0.38;
 
@@ -551,7 +551,7 @@ class FinderProcessor extends BaseProcessor {
      * Zigzag finder pattern (square with notched corners)
      */
     createZigzagFinder(x, y, size) {
-        console.log(`[FinderProcessor] createZigzagFinder called: x=${x}, y=${y}, size=${size}`);
+        this.log(`createZigzagFinder called: x=${x}, y=${y}, size=${size}`);
         const notch = size * 0.15; // Notch size
 
         // Simplified zigzag - square with notched/stepped corners
@@ -574,7 +574,7 @@ class FinderProcessor extends BaseProcessor {
      * Circle-dots finder pattern (dotted circle outline)
      */
     createCircleDotsFinder(x, y, size) {
-        console.log(`[FinderProcessor] createCircleDotsFinder called: x=${x}, y=${y}, size=${size}`);
+        this.log(`createCircleDotsFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
         const cy = y + size / 2;
         const mainR = size * 0.42;
@@ -689,7 +689,7 @@ class FinderProcessor extends BaseProcessor {
      * Eye-shaped dot (pointed oval/almond)
      */
     createEyeShapedDot(x, y, size) {
-        console.log(`[FinderProcessor] createEyeShapedDot called`);
+        this.log('createEyeShapedDot called');
         const cx = x + size / 2;
         const cy = y + size / 2;
         const rx = size * 0.45;
@@ -705,7 +705,7 @@ class FinderProcessor extends BaseProcessor {
      * Octagon dot
      */
     createOctagonDot(x, y, size) {
-        console.log(`[FinderProcessor] createOctagonDot called`);
+        this.log('createOctagonDot called');
         const cut = size * 0.28;
 
         return `M ${x + cut} ${y} ` +
@@ -722,7 +722,7 @@ class FinderProcessor extends BaseProcessor {
      * Whirlpool dot (twisted rounded shape)
      */
     createWhirlpoolDot(x, y, size) {
-        console.log(`[FinderProcessor] createWhirlpoolDot called`);
+        this.log('createWhirlpoolDot called');
         const cx = x + size / 2;
         const cy = y + size / 2;
         const r = size * 0.4;
@@ -740,7 +740,7 @@ class FinderProcessor extends BaseProcessor {
      * Water-drop dot (teardrop)
      */
     createWaterDropDot(x, y, size) {
-        console.log(`[FinderProcessor] createWaterDropDot called`);
+        this.log('createWaterDropDot called');
         const cx = x + size / 2;
         const r = size * 0.32;
 
@@ -755,7 +755,7 @@ class FinderProcessor extends BaseProcessor {
      * Zigzag dot (square with notched corners)
      */
     createZigzagDot(x, y, size) {
-        console.log(`[FinderProcessor] createZigzagDot called`);
+        this.log('createZigzagDot called');
         const notch = size * 0.18;
 
         // Simplified zigzag - square with notched/stepped corners
