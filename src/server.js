@@ -79,26 +79,27 @@ app.use('/api', routes);
 
 // 404 handler
 app.use((req, res) => {
-    const errorMsg = 'Route ' + req.method + ' ' + req.originalUrl + ' not found';
+    logger.warn('Route not found: ' + req.method + ' ' + req.originalUrl);
     res.status(404).json({
         success: false,
         error: {
             code: 'NOT_FOUND',
-            message: errorMsg,
+            message: 'The requested resource was not found.',
         },
     });
 });
 
 // Error handler
+// SECURITY: Never leak error details unless explicitly in development mode
 app.use((err, req, res, next) => {
     logger.error('Error: ' + err.message, { stack: err.stack });
     res.status(err.status || 500).json({
         success: false,
         error: {
             code: err.code || 'INTERNAL_ERROR',
-            message: process.env.NODE_ENV === 'production'
-                ? 'An internal error occurred'
-                : err.message,
+            message: process.env.NODE_ENV === 'development'
+                ? err.message
+                : 'An internal error occurred',
         },
     });
 });

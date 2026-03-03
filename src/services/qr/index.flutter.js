@@ -93,10 +93,11 @@ class FlutterQREngine {
         },
       };
     } catch (error) {
+      // Log full error for debugging; return generic message to caller
+      console.error(`FlutterQREngine.generateSVG error: ${error.message}`, error.stack);
       return {
         success: false,
-        error: error.message,
-        stack: error.stack,
+        error: 'QR code generation failed. Please check your input parameters.',
       };
     }
   }

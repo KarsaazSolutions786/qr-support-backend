@@ -228,7 +228,8 @@ class CacheService {
                 stats.connected = false;
             }
         } catch (error) {
-            stats.error = error.message;
+            logger.error(`Cache stats error: ${error.message}`);
+            stats.error = 'Failed to retrieve cache stats.';
         }
 
         return stats;

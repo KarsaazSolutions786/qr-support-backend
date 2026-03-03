@@ -99,12 +99,12 @@ exports.renderQRCode = async (req, res) => {
                 });
         }
     } catch (error) {
-        logger.error(`QR render failed: ${error.message}`);
+        logger.error(`QR render failed: ${error.message}`, { stack: error.stack });
         res.status(500).json({
             success: false,
             error: {
                 code: 'RENDER_FAILED',
-                message: `Failed to render QR code: ${error.message}`,
+                message: 'Failed to render QR code. Please try again.',
             },
         });
     }
@@ -182,11 +182,12 @@ exports.getQRCodePng = async (req, res) => {
 
         // Handle Laravel errors
         if (error.status) {
+            logger.error(`Laravel error for QR ${req.params.id}: status=${error.status}, message=${error.message}`);
             return res.status(error.status).json({
                 success: false,
                 error: {
                     code: 'LARAVEL_ERROR',
-                    message: error.message || 'Failed to fetch QR code from backend',
+                    message: 'Failed to fetch QR code from backend.',
                 },
             });
         }
@@ -195,7 +196,7 @@ exports.getQRCodePng = async (req, res) => {
             success: false,
             error: {
                 code: 'PNG_FAILED',
-                message: `Failed to generate PNG: ${error.message}`,
+                message: 'Failed to generate PNG. Please try again.',
             },
         });
     }

@@ -70,9 +70,9 @@ class SvgToPngService {
 
             return pngBuffer;
         } catch (error) {
-            logger.error(`SVG to PNG conversion failed: ${error.message}`);
+            logger.error(`SVG to PNG conversion failed: ${error.message}`, { stack: error.stack });
             logger.error(`SVG content preview: ${svgContent.substring(0, 500)}...`);
-            throw new Error(`PNG conversion failed: ${error.message}`);
+            throw new Error('PNG conversion failed. The SVG content may be invalid.');
         }
     }
 

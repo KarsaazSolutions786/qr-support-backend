@@ -141,7 +141,7 @@ async function generate(req, res) {
 
         return res.status(500).json({
             success: false,
-            error: error.message,
+            error: 'QR code generation failed. Please try again.',
             code: 'GENERATION_ERROR',
         });
     }
@@ -222,7 +222,7 @@ async function preview(req, res) {
 
         return res.status(500).json({
             success: false,
-            error: error.message,
+            error: 'Preview generation failed. Please try again.',
             code: 'PREVIEW_ERROR',
         });
     }
@@ -247,7 +247,8 @@ async function getCapabilities(req, res) {
 
         return res.status(500).json({
             success: false,
-            error: error.message,
+            error: 'Failed to retrieve capabilities.',
+            code: 'CAPABILITIES_ERROR',
         });
     }
 }
@@ -373,7 +374,8 @@ async function validateDesign(req, res) {
 
         return res.status(500).json({
             success: false,
-            error: error.message,
+            error: 'Design validation failed. Please try again.',
+            code: 'VALIDATION_ERROR',
         });
     }
 }
@@ -453,11 +455,12 @@ async function batch(req, res) {
 
             } catch (itemError) {
                 errorCount++;
+                logger.error(`Batch item ${i} error: ${itemError.message}`);
 
                 results.push({
                     index: i,
                     success: false,
-                    error: itemError.message,
+                    error: 'Item generation failed.',
                 });
 
                 if (stopOnError) {
@@ -484,7 +487,7 @@ async function batch(req, res) {
 
         return res.status(500).json({
             success: false,
-            error: error.message,
+            error: 'Batch generation failed. Please try again.',
             code: 'BATCH_ERROR',
         });
     }

@@ -198,8 +198,7 @@ exports.generatePreview = async (req, res) => {
                 success: false,
                 error: {
                     code: 'LARAVEL_ERROR',
-                    message: `QR generation failed: ${laravelError.message}`,
-                    details: laravelError.data || null,
+                    message: 'QR generation failed. Please try again.',
                 },
                 meta: {
                     request_id: requestId,
@@ -247,7 +246,7 @@ exports.generatePreview = async (req, res) => {
             success: false,
             error: {
                 code: 'PREVIEW_FAILED',
-                message: `Failed to generate preview: ${error.message}`,
+                message: 'Failed to generate preview. Please try again.',
             },
             meta: {
                 request_id: requestId,
@@ -315,11 +314,12 @@ exports.getCapabilities = async (req, res) => {
             },
         });
     } catch (error) {
+        logger.error(`Capabilities error: ${error.message}`);
         res.status(500).json({
             success: false,
             error: {
                 code: 'CAPABILITIES_ERROR',
-                message: error.message,
+                message: 'Failed to retrieve capabilities.',
             },
         });
     }
@@ -354,11 +354,12 @@ exports.debugLaravel = async (req, res) => {
             },
         });
     } catch (error) {
+        logger.error(`Debug Laravel error: ${error.message}`);
         res.status(500).json({
             success: false,
             error: {
                 code: 'DEBUG_ERROR',
-                message: error.message,
+                message: 'Debug check failed.',
             },
         });
     }

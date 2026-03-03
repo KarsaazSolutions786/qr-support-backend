@@ -362,10 +362,11 @@ class LaravelService {
                 latency_ms: response.headers['x-response-time'] || 'unknown',
             };
         } catch (error) {
+            logger.error(`Laravel health check failed: ${error.message}`, { code: error.code });
             return {
                 healthy: false,
-                error: error.message,
-                code: error.code,
+                error: 'Laravel backend is unreachable.',
+                code: error.code || 'CONNECTION_ERROR',
             };
         }
     }
