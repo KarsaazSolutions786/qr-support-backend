@@ -126,9 +126,21 @@ class CacheService {
                 this.memoryCacheTimestamps.set(key, Date.now());
                 logger.debug(`Cache set (Memory): ${key}`);
 
-                // Clean up old entries if memory cache gets too big
+                // Clean up expired entries if memory cache gets too big
                 if (this.memoryCache.size > 1000) {
                     this.cleanupMemoryCache();
+                }
+
+                // Hard cap: LRU eviction (Map preserves insertion order)
+                const MAX_MEMORY_ENTRIES = 500;
+                if (this.memoryCache.size > MAX_MEMORY_ENTRIES) {
+                    const keysToRemove = [...this.memoryCache.keys()]
+                        .slice(0, this.memoryCache.size - MAX_MEMORY_ENTRIES);
+                    keysToRemove.forEach(k => {
+                        this.memoryCache.delete(k);
+                        this.memoryCacheTimestamps.delete(k);
+                    });
+                    logger.debug(`LRU eviction: removed ${keysToRemove.length} entries`);
                 }
             }
         } catch (error) {
@@ -163,10 +175,19 @@ class CacheService {
     async clearPrefix(prefix) {
         try {
             if (this.redis) {
-                const keys = await this.redis.keys(`${prefix}*`);
-                if (keys.length > 0) {
-                    await this.redis.del(...keys);
-                    logger.info(`Cleared ${keys.length} cache entries with prefix: ${prefix}`);
+                let cleared = 0;
+                let cursor = '0';
+                do {
+                    const result = await this.redis.scan(cursor, 'MATCH', `${prefix}*`, 'COUNT', 100);
+                    cursor = result[0];
+                    const keys = result[1];
+                    if (keys.length > 0) {
+                        await this.redis.del(...keys);
+                        cleared += keys.length;
+                    }
+                } while (cursor !== '0');
+                if (cleared > 0) {
+                    logger.info(`Cleared ${cleared} cache entries with prefix: ${prefix}`);
                 }
             } else {
                 let count = 0;

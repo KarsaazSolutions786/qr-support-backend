@@ -33,12 +33,35 @@ exports.renderQRCode = async (req, res) => {
             transparent = false,
         } = req.body;
 
-        if (!svg) {
+        // Validate SVG input
+        const svgContent = svg;
+        if (!svgContent || typeof svgContent !== 'string') {
             return res.status(400).json({
                 success: false,
                 error: {
                     code: 'INVALID_REQUEST',
-                    message: 'SVG content is required',
+                    message: 'SVG content required',
+                },
+            });
+        }
+        if (svgContent.length > 512000) {
+            return res.status(413).json({
+                success: false,
+                error: {
+                    code: 'PAYLOAD_TOO_LARGE',
+                    message: 'SVG content too large (max 500KB)',
+                },
+            });
+        }
+        // Strip dangerous SVG elements
+        const dangerousPatterns = /<script|<foreignObject|javascript:|on\w+\s*=/gi;
+        if (dangerousPatterns.test(svgContent)) {
+            logger.warn(`Blocked dangerous SVG content from ip=${req.ip}`);
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'INVALID_SVG',
+                    message: 'SVG contains disallowed elements',
                 },
             });
         }

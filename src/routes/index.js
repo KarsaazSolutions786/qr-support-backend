@@ -18,6 +18,7 @@ const qrController = require('../controllers/qrController');
 const previewController = require('../controllers/previewController');
 const proxyController = require('../controllers/proxyController');
 const qrV2Controller = require('../controllers/qrV2Controller');
+const apiKeyAuth = require('../middleware/apiKeyAuth');
 
 // ============================================================
 // MAIN API Routes - Laravel Proxy (RECOMMENDED)
@@ -62,7 +63,7 @@ router.get('/qr/debug/laravel', previewController.debugLaravel);
  * 
  * POST /api/qr/render
  */
-router.post('/qr/render', qrController.renderQRCode);
+router.post('/qr/render', apiKeyAuth, qrController.renderQRCode);
 
 /**
  * Get PNG by QR code ID
@@ -83,11 +84,11 @@ router.all('/proxy/*', proxyController.proxyRequest);
 // NOTE: For full feature parity, use the main /qr/preview endpoint
 // ============================================================
 
-router.post('/v2/qr/generate', qrV2Controller.generate);
-router.post('/v2/qr/preview', qrV2Controller.preview);
+router.post('/v2/qr/generate', apiKeyAuth, qrV2Controller.generate);
+router.post('/v2/qr/preview', apiKeyAuth, qrV2Controller.preview);
 router.get('/v2/qr/capabilities', qrV2Controller.getCapabilities);
 router.post('/v2/qr/validate', qrV2Controller.validateDesign);
-router.post('/v2/qr/batch', qrV2Controller.batch);
+router.post('/v2/qr/batch', apiKeyAuth, qrV2Controller.batch);
 
 // ============================================================
 // Feature discovery

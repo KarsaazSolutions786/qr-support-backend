@@ -110,7 +110,7 @@ class QRCodeGenerator {
      * @param {Object} options - Additional options (size, format, etc.)
      * @returns {Object} - {svg: string, png: Buffer, base64: string}
      */
-    generate(type, data, design = {}, options = {}) {
+    async generate(type, data, design = {}, options = {}) {
         const startTime = Date.now();
 
         try {
@@ -165,10 +165,22 @@ class QRCodeGenerator {
             // Step 6: Build SVG from matrix and payload
             const svg = this.buildSVG(payload);
 
-            // Step 7: PNG conversion disabled for Flutter (handled by Flutter Canvas)
-            // const pngBuffer = await this.convertToPNG(svg, size, options);
-            // const pngBase64 = pngBuffer.toString('base64');
-            const pngBase64 = null; // PNG generation handled in Flutter
+            // Step 7: Convert SVG to PNG using Sharp
+            let pngBase64 = null;
+            const format = options.format || 'both';
+            if (format === 'png' || format === 'both') {
+                try {
+                    const svgBuffer = Buffer.from(svg);
+                    const pngBuffer = await sharp(svgBuffer)
+                        .resize(size)
+                        .png()
+                        .toBuffer();
+                    pngBase64 = pngBuffer.toString('base64');
+                } catch (pngErr) {
+                    logger.error(`PNG generation failed: ${pngErr.message}`);
+                    pngBase64 = null;
+                }
+            }
 
             const generationTime = Date.now() - startTime;
             logger.info(`QR code generated in ${generationTime}ms`);
@@ -176,8 +188,7 @@ class QRCodeGenerator {
             return {
                 svg,
                 svgBase64: Buffer.from(svg).toString('base64'),
-                // png: pngBuffer, // PNG generation handled in Flutter
-                // pngBase64, // PNG generation handled in Flutter
+                pngBase64,
                 meta: {
                     type,
                     size,

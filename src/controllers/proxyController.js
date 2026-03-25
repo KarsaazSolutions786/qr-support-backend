@@ -14,7 +14,14 @@ const logger = require('../utils/logger');
 // SECURITY: Allow-list of permitted proxy path prefixes
 // Only these Laravel API paths can be proxied
 const ALLOWED_PROXY_PREFIXES = [
-    '/api/',
+    '/api/flutter/',
+    '/api/qrcodes/preview',
+    '/api/qrcodes/create',
+    '/api/qrcodes/store',
+    '/api/bootstrap',
+    '/api/design-assets',
+    '/api/plans',
+    '/api/myself',
 ];
 
 // SECURITY: Block-list of sensitive paths that must never be proxied
@@ -77,12 +84,12 @@ exports.proxyRequest = async (req, res) => {
         // SECURITY: Validate proxy target path
         const targetPath = req.path.replace(/^\/api\/proxy/, '');
         if (!isProxyPathAllowed(targetPath)) {
-            logger.warn(`Blocked proxy request to disallowed path: ${targetPath}`);
+            logger.warn(`Blocked proxy attempt: path=${targetPath}, ip=${req.ip}, ua=${req.get('user-agent')}`);
             return res.status(403).json({
                 success: false,
                 error: {
                     code: 'PROXY_FORBIDDEN',
-                    message: 'Proxy request to this path is not allowed',
+                    message: `Proxy request to '${targetPath}' is not in the allowed path list`,
                 },
             });
         }

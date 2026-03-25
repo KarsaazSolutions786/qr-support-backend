@@ -70,8 +70,11 @@ class SvgToPngService {
 
             return pngBuffer;
         } catch (error) {
-            logger.error(`SVG to PNG conversion failed: ${error.message}`, { stack: error.stack });
-            logger.error(`SVG content preview: ${svgContent.substring(0, 500)}...`);
+            logger.error(`SVG conversion failed: ${error.message}`, {
+                svgLength: svgContent.length,
+                svgPreview: svgContent.substring(0, 100).replace(/[^\x20-\x7E]/g, '?'),
+                // DO NOT log full SVG content
+            });
             throw new Error('PNG conversion failed. The SVG content may be invalid.');
         }
     }
@@ -320,8 +323,11 @@ class SvgToPngService {
             return `d="${fixedPath}"`;
         });
 
-        // Ensure all colors are in proper format
-        fixed = fixed.replace(/#([0-9a-fA-F]{3})(?![0-9a-fA-F])/g, '#$1$1');
+        // Correct: #ABC -> #AABBCC (expand each digit)
+        fixed = fixed.replace(
+            /#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])(?![0-9a-fA-F])/g,
+            '#$1$1$2$2$3$3'
+        );
 
         return fixed;
     }

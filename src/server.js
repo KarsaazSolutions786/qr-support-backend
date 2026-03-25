@@ -47,7 +47,7 @@ app.use('/api/', limiter);
 
 // Body parsing - SECURITY: Limit payload size to prevent DoS
 app.use(express.json({ limit: '500kb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '500kb' }));
 
 // Request logging
 app.use((req, res, next) => {
