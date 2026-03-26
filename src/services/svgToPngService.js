@@ -14,6 +14,10 @@ class SvgToPngService {
         this.defaultQuality = parseInt(process.env.DEFAULT_PNG_QUALITY) || 90;
         this.maxSize = parseInt(process.env.MAX_PNG_SIZE) || 2048;
         this.minSize = parseInt(process.env.MIN_PNG_SIZE) || 64;
+
+        // Proxy mode: forward conversions to Laravel backend (30-day transition)
+        this.useLaravelConverter = process.env.USE_LARAVEL_CONVERTER === 'true';
+        this.laravelBackendUrl = process.env.LARAVEL_BACKEND_URL || 'http://localhost:8000';
     }
 
     /**
@@ -24,6 +28,16 @@ class SvgToPngService {
      * @returns {Promise<Buffer>} PNG buffer
      */
     async convert(svgContent, options = {}) {
+        // Proxy mode: forward to Laravel backend during transition period
+        if (this.useLaravelConverter && !options._localFallback) {
+            try {
+                return await this.proxyToLaravel(svgContent, options);
+            } catch (proxyError) {
+                logger.warn(`Laravel proxy failed, falling back to local conversion: ${proxyError.message}`);
+                // Fall through to local conversion
+            }
+        }
+
         const startTime = Date.now();
 
         try {
@@ -330,6 +344,43 @@ class SvgToPngService {
         );
 
         return fixed;
+    }
+
+    /**
+     * Proxy SVG-to-PNG conversion to the Laravel backend.
+     *
+     * Used during the 30-day transition period when USE_LARAVEL_CONVERTER=true.
+     * Falls back to local Sharp conversion on failure.
+     *
+     * @param {string} svgContent - SVG content
+     * @param {object} options    - Conversion options
+     * @returns {Promise<Buffer>} PNG buffer from Laravel
+     */
+    async proxyToLaravel(svgContent, options = {}) {
+        const axios = require('axios');
+
+        const width = this.clampSize(options.width || options.size || this.defaultSize);
+        const quality = Math.min(100, Math.max(1, options.quality || this.defaultQuality));
+
+        const response = await axios.post(
+            `${this.laravelBackendUrl}/api/flutter/qr/render`,
+            {
+                svg: svgContent,
+                size: width,
+                quality: quality,
+            },
+            {
+                timeout: parseInt(process.env.LARAVEL_API_TIMEOUT) || 30000,
+                responseType: 'arraybuffer',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'image/png',
+                },
+            }
+        );
+
+        logger.debug(`Laravel proxy conversion successful: ${response.data.length} bytes`);
+        return Buffer.from(response.data);
     }
 
     /**

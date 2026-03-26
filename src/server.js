@@ -21,12 +21,43 @@ const PORT = process.env.PORT || 3000;
 
 // Security middleware
 app.use(helmet());
-// SECURITY: Restrict CORS to known origins (configure via ALLOWED_ORIGINS env var)
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '*').split(',').map(s => s.trim());
+
+// ─── CORS Configuration ─────────────────────────────────────────────────────
+// Origins are controlled by the ALLOWED_ORIGINS env var (comma-separated).
+//
+// How to add a new origin:
+//   1. Open your .env (or hosting panel env vars).
+//   2. Append the full origin URL to ALLOWED_ORIGINS, comma-separated.
+//      Example: ALLOWED_ORIGINS=https://app.karsaazqr.com,https://new-app.example.com
+//   3. Restart the server.
+//
+// Behaviour when ALLOWED_ORIGINS is empty / not set:
+//   - Production: ALL cross-origin requests are rejected (secure default).
+//   - Development (APP_ENV=development OR NODE_ENV=development):
+//     localhost origins (http://localhost:*) are automatically allowed.
+// ─────────────────────────────────────────────────────────────────────────────
+const isDev = process.env.APP_ENV === 'development' || process.env.NODE_ENV === 'development';
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+
 app.use(cors({
-    origin: allowedOrigins.length === 1 && allowedOrigins[0] === '*'
-        ? true  // Allow all in dev (set ALLOWED_ORIGINS in production)
-        : allowedOrigins,
+    origin: function (origin, callback) {
+        // Allow server-to-server requests (no origin header)
+        if (!origin) return callback(null, true);
+
+        // Check explicit allow-list
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+
+        // In development, permit any localhost origin
+        if (isDev && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+            return callback(null, true);
+        }
+
+        // Reject everything else
+        callback(new Error('CORS: origin ' + origin + ' is not allowed'));
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-ID'],
 }));
