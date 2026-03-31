@@ -37,6 +37,7 @@ class LaravelService {
         this.baseUrl = process.env.LARAVEL_BACKEND_URL || 'http://localhost:8000';
         this.timeout = parseInt(process.env.LARAVEL_API_TIMEOUT) || 60000;
         this.maxRetries = parseInt(process.env.LARAVEL_MAX_RETRIES) || 2;
+        this._rpcId = 0;
 
         this.client = axios.create({
             baseURL: this.baseUrl,
@@ -369,6 +370,114 @@ class LaravelService {
                 code: error.code || 'CONNECTION_ERROR',
             };
         }
+    }
+
+    // ─── JSON-RPC 2.0 Transport ──────────────────────────────────────
+
+    /**
+     * Call a single JSON-RPC 2.0 method on the Laravel backend.
+     *
+     * @param {string} method - RPC method (e.g., "qrcode.list", "designAsset.analyze")
+     * @param {object} params - Method parameters
+     * @param {string|null} authToken - Bearer token (null for public endpoint)
+     * @returns {Promise<*>} The result field from the RPC response
+     * @throws {object} RPC error with code/message/data
+     */
+    async rpc(method, params = {}, authToken = null) {
+        const endpoint = authToken ? '/api/rpc' : '/api/rpc/public';
+        const id = ++this._rpcId;
+
+        const body = {
+            jsonrpc: '2.0',
+            method,
+            params,
+            id,
+        };
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) {
+            headers['Authorization'] = authToken.startsWith('Bearer ')
+                ? authToken
+                : `Bearer ${authToken}`;
+        }
+
+        logger.debug(`→ RPC: ${method} (id=${id})`);
+
+        try {
+            const response = await this.client.post(endpoint, body, { headers });
+            const data = response.data;
+
+            if (data.error) {
+                const err = new Error(data.error.message || 'RPC error');
+                err.code = data.error.code;
+                err.data = data.error.data;
+                err.rpcError = true;
+                throw err;
+            }
+
+            return data.result;
+        } catch (error) {
+            if (error.rpcError) throw error;
+            logger.error(`RPC error (${method}): ${error.message}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Call multiple JSON-RPC 2.0 methods in a single HTTP request.
+     *
+     * @param {Array<{method: string, params?: object}>} calls - Method calls
+     * @param {string|null} authToken - Bearer token
+     * @returns {Promise<Map<string, {error: object|null, result: *|null}>>}
+     */
+    async rpcBatch(calls, authToken = null) {
+        const endpoint = authToken ? '/api/rpc' : '/api/rpc/public';
+
+        const requests = calls.map(call => ({
+            jsonrpc: '2.0',
+            method: call.method,
+            params: call.params || {},
+            id: ++this._rpcId,
+        }));
+
+        // Build id → method lookup
+        const idToMethod = new Map();
+        requests.forEach((req, i) => {
+            idToMethod.set(req.id, calls[i].method);
+        });
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) {
+            headers['Authorization'] = authToken.startsWith('Bearer ')
+                ? authToken
+                : `Bearer ${authToken}`;
+        }
+
+        logger.debug(`→ RPC Batch: ${calls.map(c => c.method).join(', ')}`);
+
+        const response = await this.client.post(endpoint, requests, { headers });
+
+        const resultMap = new Map();
+        const responses = Array.isArray(response.data) ? response.data : [response.data];
+
+        // Index by id
+        const byId = new Map();
+        for (const resp of responses) {
+            if (resp && resp.id != null) byId.set(resp.id, resp);
+        }
+
+        for (const [id, method] of idToMethod) {
+            const resp = byId.get(id);
+            if (!resp) {
+                resultMap.set(method, { error: { code: -32603, message: 'No response' }, result: null });
+            } else if (resp.error) {
+                resultMap.set(method, { error: resp.error, result: null });
+            } else {
+                resultMap.set(method, { error: null, result: resp.result });
+            }
+        }
+
+        return resultMap;
     }
 }
 

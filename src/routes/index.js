@@ -18,7 +18,14 @@ const qrController = require('../controllers/qrController');
 const previewController = require('../controllers/previewController');
 const proxyController = require('../controllers/proxyController');
 const qrV2Controller = require('../controllers/qrV2Controller');
+const rpcController = require('../controllers/rpcController');
 const apiKeyAuth = require('../middleware/apiKeyAuth');
+
+// ============================================================
+// JSON-RPC 2.0 Endpoint (single + batch, dedup, error isolation)
+// ============================================================
+router.post('/rpc', rpcController.handle);
+router.get('/rpc/methods', rpcController.methods);
 
 // ============================================================
 // MAIN API Routes - Laravel Proxy (RECOMMENDED)
