@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log*
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+logs
+*.log
+dist
+coverage
+webpack.flutter.config.js
+README.md
+*.md
