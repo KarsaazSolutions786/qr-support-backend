@@ -13,6 +13,7 @@
 
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 
 const qrController = require('../controllers/qrController');
 const previewController = require('../controllers/previewController');
@@ -22,9 +23,52 @@ const rpcController = require('../controllers/rpcController');
 const apiKeyAuth = require('../middleware/apiKeyAuth');
 
 // ============================================================
-// JSON-RPC 2.0 Endpoint (single + batch, dedup, error isolation)
+// Per-endpoint rate limiters
+// Heavy render/generate endpoints: 30 req/min per IP
+// Preview endpoints: 20 req/min per IP
+// Batch endpoint: 10 req/min per IP
+// All others keep the global 100/min applied in server.js
 // ============================================================
-router.post('/rpc', rpcController.handle);
+
+const makeRateLimitResponse = (max, windowSec) => ({
+    success: false,
+    error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: `Too many requests — limit is ${max} per ${windowSec}s. Please slow down.`,
+    },
+});
+
+const renderLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: makeRateLimitResponse(30, 60),
+});
+
+const previewLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: makeRateLimitResponse(20, 60),
+});
+
+const batchLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: makeRateLimitResponse(10, 60),
+});
+
+// ============================================================
+// JSON-RPC 2.0 Endpoint (single + batch, dedup, error isolation)
+// SECURITY: apiKeyAuth required — this endpoint proxies to Laravel and performs
+//           SVG-to-PNG conversion. Without auth any anonymous caller can trigger
+//           resource-intensive rendering and exfiltrate data via the proxy.
+// ============================================================
+router.post('/rpc', apiKeyAuth, rpcController.handle);
 router.get('/rpc/methods', rpcController.methods);
 
 // ============================================================
@@ -35,17 +79,17 @@ router.get('/rpc/methods', rpcController.methods);
 /**
  * Main preview endpoint
  * ALWAYS proxies to Laravel for full feature support
- * 
+ *
  * POST /api/qr/preview
  */
-router.post('/qr/preview', previewController.generatePreview);
+router.post('/qr/preview', previewLimiter, previewController.generatePreview);
 
 /**
  * Laravel-explicit endpoint (same as above, kept for compatibility)
- * 
+ *
  * POST /api/qr/preview/laravel
  */
-router.post('/qr/preview/laravel', previewController.generateFromLaravel);
+router.post('/qr/preview/laravel', previewLimiter, previewController.generateFromLaravel);
 
 /**
  * Get supported capabilities
@@ -67,10 +111,10 @@ router.get('/qr/debug/laravel', previewController.debugLaravel);
 
 /**
  * Direct SVG to PNG render
- * 
+ *
  * POST /api/qr/render
  */
-router.post('/qr/render', apiKeyAuth, qrController.renderQRCode);
+router.post('/qr/render', renderLimiter, apiKeyAuth, qrController.renderQRCode);
 
 /**
  * Get PNG by QR code ID
@@ -81,21 +125,25 @@ router.get('/qr/:id/png', qrController.getQRCodePng);
 
 /**
  * Direct proxy to Laravel (with auth passthrough)
- * 
+ *
  * ALL /api/proxy/*
+ *
+ * SECURITY: apiKeyAuth required — without server-to-server key validation any
+ * anonymous client can proxy arbitrary requests to the Laravel backend,
+ * bypassing the allow-list at the network layer.
  */
-router.all('/proxy/*', proxyController.proxyRequest);
+router.all('/proxy/*', apiKeyAuth, proxyController.proxyRequest);
 
 // ============================================================
 // V2 API Routes - Direct generation (for simple cases)
 // NOTE: For full feature parity, use the main /qr/preview endpoint
 // ============================================================
 
-router.post('/v2/qr/generate', apiKeyAuth, qrV2Controller.generate);
-router.post('/v2/qr/preview', apiKeyAuth, qrV2Controller.preview);
+router.post('/v2/qr/generate', renderLimiter, apiKeyAuth, qrV2Controller.generate);
+router.post('/v2/qr/preview', previewLimiter, apiKeyAuth, qrV2Controller.preview);
 router.get('/v2/qr/capabilities', qrV2Controller.getCapabilities);
 router.post('/v2/qr/validate', qrV2Controller.validateDesign);
-router.post('/v2/qr/batch', apiKeyAuth, qrV2Controller.batch);
+router.post('/v2/qr/batch', batchLimiter, apiKeyAuth, qrV2Controller.batch);
 
 // ============================================================
 // Feature discovery

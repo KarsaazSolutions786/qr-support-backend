@@ -3,10 +3,56 @@
  *
  * Uses Sharp library for high-quality SVG to PNG conversion.
  * Sharp uses libvips under the hood, which has excellent SVG support.
+ *
+ * Concurrency control:
+ *   A promise-based semaphore limits simultaneous Sharp operations to
+ *   os.cpus().length. This prevents memory exhaustion under load — Sharp/libvips
+ *   allocates a decode buffer per operation; running too many in parallel on a
+ *   heavily-loaded node causes OOM before CPU becomes the bottleneck.
+ *   Excess requests are queued (not rejected) and processed FIFO.
  */
 
+const os = require('os');
 const sharp = require('sharp');
 const logger = require('../utils/logger');
+
+/**
+ * Simple promise-based semaphore for concurrency limiting.
+ * No external packages required.
+ *
+ * @param {number} concurrency - Maximum simultaneous operations
+ */
+function createSemaphore(concurrency) {
+    let active = 0;
+    const queue = [];
+
+    function tryNext() {
+        if (queue.length === 0 || active >= concurrency) return;
+        active++;
+        const { resolve } = queue.shift();
+        resolve();
+    }
+
+    /**
+     * Acquire a slot. Awaiting this function will pause the caller
+     * until a slot is available.
+     * @returns {Promise<Function>} release — must be called when the slot can be freed.
+     */
+    function acquire() {
+        return new Promise((resolve) => {
+            queue.push({ resolve });
+            tryNext();
+        }).then(() => {
+            // Return a release function
+            return function release() {
+                active--;
+                tryNext();
+            };
+        });
+    }
+
+    return { acquire };
+}
 
 class SvgToPngService {
     constructor() {
@@ -18,6 +64,12 @@ class SvgToPngService {
         // Proxy mode: forward conversions to Laravel backend (30-day transition)
         this.useLaravelConverter = process.env.USE_LARAVEL_CONVERTER === 'true';
         this.laravelBackendUrl = process.env.LARAVEL_BACKEND_URL || 'http://localhost:8000';
+
+        // Concurrency limiter: cap Sharp operations at the number of logical CPUs.
+        // Override via SHARP_CONCURRENCY env var for smaller/larger instances.
+        const maxConcurrent = parseInt(process.env.SHARP_CONCURRENCY) || os.cpus().length;
+        this._semaphore = createSemaphore(maxConcurrent);
+        logger.info('SvgToPngService: Sharp concurrency limit set to ' + maxConcurrent);
     }
 
     /**
@@ -39,6 +91,11 @@ class SvgToPngService {
         }
 
         const startTime = Date.now();
+
+        // Acquire a concurrency slot before allocating Sharp buffers.
+        // This queues the caller if all slots are occupied, preventing memory
+        // exhaustion under burst load.
+        const release = await this._semaphore.acquire();
 
         try {
             const width = this.clampSize(options.width || options.size || this.defaultSize);
@@ -90,6 +147,9 @@ class SvgToPngService {
                 // DO NOT log full SVG content
             });
             throw new Error('PNG conversion failed. The SVG content may be invalid.');
+        } finally {
+            // Always release the semaphore slot, even on error
+            release();
         }
     }
 

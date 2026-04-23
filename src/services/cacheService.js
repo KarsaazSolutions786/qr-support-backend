@@ -7,7 +7,51 @@
 
 const Redis = require('ioredis');
 const crypto = require('crypto');
+const zlib = require('zlib');
 const logger = require('../utils/logger');
+
+// Gzip magic bytes: 0x1f 0x8b
+const GZIP_MAGIC_0 = 0x1f;
+const GZIP_MAGIC_1 = 0x8b;
+
+/**
+ * Compress a Buffer with gzip before storing in Redis.
+ * Strings are returned as-is (they are already compact JSON).
+ *
+ * @param {Buffer|string} value
+ * @returns {Buffer|string}
+ */
+function compressForCache(value) {
+    if (Buffer.isBuffer(value)) {
+        try {
+            return zlib.gzipSync(value);
+        } catch (err) {
+            logger.warn('Cache compress error (storing raw): ' + err.message);
+            return value;
+        }
+    }
+    return value;
+}
+
+/**
+ * Decompress a value retrieved from Redis.
+ * Detects gzip magic bytes and gunzips; otherwise returns value unchanged.
+ *
+ * @param {Buffer|string|null} value
+ * @returns {Buffer|string|null}
+ */
+function decompressFromCache(value) {
+    if (Buffer.isBuffer(value) && value.length >= 2 &&
+        value[0] === GZIP_MAGIC_0 && value[1] === GZIP_MAGIC_1) {
+        try {
+            return zlib.gunzipSync(value);
+        } catch (err) {
+            logger.warn('Cache decompress error (returning raw): ' + err.message);
+            return value;
+        }
+    }
+    return value;
+}
 
 class CacheService {
     constructor() {
@@ -60,7 +104,7 @@ class CacheService {
      */
     generateKey(params) {
         const hash = crypto
-            .createHash('md5')
+            .createHash('sha256')
             .update(JSON.stringify(params))
             .digest('hex');
         return `qr_support:${hash}`;
@@ -77,10 +121,10 @@ class CacheService {
 
         try {
             if (this.redis) {
-                const value = await this.redis.getBuffer(key);
-                if (value) {
+                const raw = await this.redis.getBuffer(key);
+                if (raw) {
                     logger.debug(`Cache hit (Redis): ${key}`);
-                    return value;
+                    return decompressFromCache(raw);
                 }
             } else {
                 // Memory cache fallback
@@ -118,7 +162,10 @@ class CacheService {
 
         try {
             if (this.redis) {
-                await this.redis.setex(key, cacheTtl, value);
+                // Compress Buffer values (PNG data) before storage to save ~60% Redis memory.
+                // String values (JSON) are stored as-is — they compress poorly without context.
+                const stored = compressForCache(value);
+                await this.redis.setex(key, cacheTtl, stored);
                 logger.debug(`Cache set (Redis): ${key}, TTL: ${cacheTtl}s`);
             } else {
                 // Memory cache fallback

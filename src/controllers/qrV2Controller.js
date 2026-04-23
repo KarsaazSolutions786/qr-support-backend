@@ -420,9 +420,37 @@ async function batch(req, res) {
             });
         }
 
+        // ── Deduplication ──────────────────────────────────────────────────────
+        // Build a map from a stable key (type + serialised data) to the first
+        // index that carries that combination.  Subsequent items with the same
+        // key are recorded as aliases and will reuse the generated result rather
+        // than triggering a second (expensive) render pass.
+        //
+        // The dedup key intentionally excludes `design` and `options` because
+        // the QR *payload* is what is expensive to encode.  If callers send
+        // identical payloads with different designs they will still be deduplicated
+        // only on the payload — change this if full design dedup is needed.
+        const dedupMap = new Map(); // dedupKey → first item index
+        const aliases  = new Map(); // item index → first-occurrence index
+
+        for (let i = 0; i < items.length; i++) {
+            const { type, data } = items[i];
+            if (!type || !data) continue; // will fail validation below, skip dedup
+            const dedupKey = type + '\x00' + JSON.stringify(data);
+            if (dedupMap.has(dedupKey)) {
+                aliases.set(i, dedupMap.get(dedupKey));
+            } else {
+                dedupMap.set(dedupKey, i);
+            }
+        }
+        // ───────────────────────────────────────────────────────────────────────
+
         const results = [];
         let successCount = 0;
         let errorCount = 0;
+
+        // generatedResults[i] is set once item i has been successfully rendered.
+        const generatedResults = new Array(items.length);
 
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
@@ -434,10 +462,20 @@ async function batch(req, res) {
                     throw new Error('Type and data are required');
                 }
 
-                const result = await generator.generate(type, data, design, {
-                    size: options.size || 512,
-                    quality: options.quality || 90,
-                });
+                let result;
+
+                if (aliases.has(i)) {
+                    // Re-use already-generated result from the first occurrence.
+                    const sourceIdx = aliases.get(i);
+                    result = generatedResults[sourceIdx];
+                    logger.debug(`Batch item ${i} deduplicated from item ${sourceIdx}`);
+                } else {
+                    result = await generator.generate(type, data, design, {
+                        size: options.size || 512,
+                        quality: options.quality || 90,
+                    });
+                    generatedResults[i] = result;
+                }
 
                 results.push({
                     index: i,
