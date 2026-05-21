@@ -25,6 +25,7 @@
  * - fourTriangles
  */
 const BaseProcessor = require('./BaseProcessor');
+const logger = require('../../../utils/logger');
 
 /**
  * Purpose: Class definition for ModuleProcessor.
@@ -107,7 +108,7 @@ class ModuleProcessor extends BaseProcessor {
     process(payload) {
         const { design, qrMatrix, moduleSize, startX, startY } = payload;
 
-        console.log(`[ModuleProcessor] process called with design.module: ${design.module}, design.moduleShape: ${design.moduleShape}`);
+        logger.debug(`[ModuleProcessor] process called with design.module: ${design.module}, design.moduleShape: ${design.moduleShape}`);
 
         // Get module shape
         const shape = this.normalizeShape(design.module || design.moduleShape || 'square');
@@ -116,7 +117,7 @@ class ModuleProcessor extends BaseProcessor {
         payload.moduleShape = shape;
         payload.modulePathGenerator = this.getPathGenerator(shape);
 
-        console.log(`[ModuleProcessor] Final module shape: ${shape}, generator exists: ${!!payload.modulePathGenerator}`);
+        logger.debug(`[ModuleProcessor] Final module shape: ${shape}, generator exists: ${!!payload.modulePathGenerator}`);
         this.log(`Module shape set to: ${shape}`);
 
         return payload;
@@ -168,7 +169,7 @@ class ModuleProcessor extends BaseProcessor {
     generateModulePath(shape, x, y, size, context = {}) {
         const generator = this.getPathGenerator(shape);
         if (!generator) {
-            console.error(`[ModuleProcessor] No generator found for shape: ${shape}, falling back to square`);
+            logger.error(`[ModuleProcessor] No generator found for shape: ${shape}, falling back to square`);
             return this.createSquare(x, y, size, context);
         }
         return generator(x, y, size, context);
@@ -446,7 +447,7 @@ class ModuleProcessor extends BaseProcessor {
      */
     
     createTriangleEnd(x, y, size, context = {}) {
-        console.log(`[ModuleProcessor] createTriangleEnd called: x=${x}, y=${y}, size=${size}`);
+        logger.debug(`[ModuleProcessor] createTriangleEnd called: x=${x}, y=${y}, size=${size}`);
         const pad = size * 0.05;
         const cy = y + size / 2;
 
@@ -454,7 +455,7 @@ class ModuleProcessor extends BaseProcessor {
         const path = `M ${x + pad} ${y + pad} ` +
             `L ${x + size - pad} ${cy} ` +
             `L ${x + pad} ${y + size - pad} Z`;
-        console.log(`[ModuleProcessor] createTriangleEnd path: ${path}`);
+        logger.debug(`[ModuleProcessor] createTriangleEnd path: ${path}`);
         return path;
     }
 
@@ -519,13 +520,13 @@ class ModuleProcessor extends BaseProcessor {
      */
     
     createRoundness(x, y, size, context = {}) {
-        console.log(`[ModuleProcessor] createRoundness called: x=${x}, y=${y}, size=${size}`);
+        logger.debug(`[ModuleProcessor] createRoundness called: x=${x}, y=${y}, size=${size}`);
         // Create an almost-circular rounded rectangle
         const padding = size * 0.05;
         const innerSize = size - padding * 2;
         const r = innerSize * 0.48; // Almost circular
         const path = this.createRoundedRect(x + padding, y + padding, innerSize, innerSize, r);
-        console.log(`[ModuleProcessor] createRoundness path: ${path.substring(0, 50)}...`);
+        logger.debug(`[ModuleProcessor] createRoundness path: ${path.substring(0, 50)}...`);
         return path;
     }
 
@@ -536,7 +537,7 @@ class ModuleProcessor extends BaseProcessor {
      */
     
     createTwoTrianglesWithCircle(x, y, size, context = {}) {
-        console.log(`[ModuleProcessor] createTwoTrianglesWithCircle called: x=${x}, y=${y}, size=${size}`);
+        logger.debug(`[ModuleProcessor] createTwoTrianglesWithCircle called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
         const cy = y + size / 2;
         const pad = size * 0.05;
@@ -552,7 +553,7 @@ class ModuleProcessor extends BaseProcessor {
         const bottomTriangle = `M ${x + pad} ${y + size - pad} L ${x + size - pad} ${y + size - pad} L ${cx} ${cy + circleR + pad * 2} Z`;
 
         const path = `${circle} ${topTriangle} ${bottomTriangle}`;
-        console.log(`[ModuleProcessor] createTwoTrianglesWithCircle generated path`);
+        logger.debug(`[ModuleProcessor] createTwoTrianglesWithCircle generated path`);
         return path;
     }
 
@@ -563,7 +564,7 @@ class ModuleProcessor extends BaseProcessor {
      */
     
     createFourTriangles(x, y, size, context = {}) {
-        console.log(`[ModuleProcessor] createFourTriangles called: x=${x}, y=${y}, size=${size}`);
+        logger.debug(`[ModuleProcessor] createFourTriangles called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
         const cy = y + size / 2;
         const gap = size * 0.12; // Gap between triangles for visual distinction
@@ -582,7 +583,7 @@ class ModuleProcessor extends BaseProcessor {
         const bl = `M ${x} ${y + size} L ${x} ${cy + gap} L ${cx - gap} ${y + size} Z`;
 
         const path = `${tl} ${tr} ${br} ${bl}`;
-        console.log(`[ModuleProcessor] createFourTriangles generated 4 corner triangles`);
+        logger.debug(`[ModuleProcessor] createFourTriangles generated 4 corner triangles`);
         return path;
     }
 

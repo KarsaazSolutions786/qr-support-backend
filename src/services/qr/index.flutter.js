@@ -12,6 +12,7 @@ const FinderProcessor = require('./processors/FinderProcessor');
 const StickerProcessor = require('./processors/StickerProcessor');
 const FrameProcessor = require('./processors/FrameProcessor');
 const LogoProcessor = require('./processors/LogoProcessor');
+const logger = require('../../utils/logger');
 
 /**
  * Purpose: Main QR Engine API for Flutter
@@ -103,7 +104,7 @@ class FlutterQREngine {
       };
     } catch (error) {
       // Log full error for debugging; return generic message to caller
-      console.error(`FlutterQREngine.generateSVG error: ${error.message}`, error.stack);
+      logger.error(`FlutterQREngine.generateSVG error: ${error.message}`, { stack: error.stack });
       return {
         success: false,
         error: 'QR code generation failed. Please check your input parameters.',

@@ -45,7 +45,10 @@ async function handleQrPreview(params) {
     const { qrcode_id, type, size = 512, quality = 90, ...designParams } = params || {};
 
     if (!qrcode_id && !type) {
-        throw { ...RPC_ERRORS.INVALID_PARAMS, data: 'qrcode_id or type is required' };
+        const err = new Error(RPC_ERRORS.INVALID_PARAMS.message);
+        err.code = RPC_ERRORS.INVALID_PARAMS.code;
+        err.data = 'qrcode_id or type is required';
+        throw err;
     }
 
     // Proxy to Laravel for full-featured SVG generation
@@ -56,7 +59,10 @@ async function handleQrPreview(params) {
     });
 
     if (!svgResponse || !svgResponse.svg) {
-        throw { ...RPC_ERRORS.INTERNAL_ERROR, data: 'Laravel returned no SVG' };
+        const err = new Error(RPC_ERRORS.INTERNAL_ERROR.message);
+        err.code = RPC_ERRORS.INTERNAL_ERROR.code;
+        err.data = 'Laravel returned no SVG';
+        throw err;
     }
 
     // Convert SVG → PNG
@@ -84,7 +90,10 @@ async function handleQrRender(params) {
     const { svg, size = 512, quality = 90, format = 'base64' } = params || {};
 
     if (!svg || typeof svg !== 'string') {
-        throw { ...RPC_ERRORS.INVALID_PARAMS, data: 'svg string is required' };
+        const err = new Error(RPC_ERRORS.INVALID_PARAMS.message);
+        err.code = RPC_ERRORS.INVALID_PARAMS.code;
+        err.data = 'svg string is required';
+        throw err;
     }
 
     // Check cache

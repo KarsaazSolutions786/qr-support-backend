@@ -3,16 +3,63 @@
  *
  * Uses Sharp library for high-quality SVG to PNG conversion.
  * Sharp uses libvips under the hood, which has excellent SVG support.
+ *
+ * Concurrency control:
+ *   A promise-based semaphore limits simultaneous Sharp operations to
+ *   os.cpus().length. This prevents memory exhaustion under load — Sharp/libvips
+ *   allocates a decode buffer per operation; running too many in parallel on a
+ *   heavily-loaded node causes OOM before CPU becomes the bottleneck.
+ *   Excess requests are queued (not rejected) and processed FIFO.
  */
 
+/**
+     * Purpose: Convert SVG string to PNG buffer
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
+     */
+
+const os = require('os');
 const sharp = require('sharp');
 const logger = require('../utils/logger');
 
 /**
- * Purpose: Class definition for SvgToPngService.
- * Owner/Author: Syed Ashhad
- * Created/Updated: January 2026
+ * Simple promise-based semaphore for concurrency limiting.
+ * No external packages required.
+ *
+ * @param {number} concurrency - Maximum simultaneous operations
  */
+function createSemaphore(concurrency) {
+    let active = 0;
+    const queue = [];
+
+    function tryNext() {
+        if (queue.length === 0 || active >= concurrency) return;
+        active++;
+        const { resolve } = queue.shift();
+        resolve();
+    }
+
+    /**
+     * Acquire a slot. Awaiting this function will pause the caller
+     * until a slot is available.
+     * @returns {Promise<Function>} release — must be called when the slot can be freed.
+     */
+    function acquire() {
+        return new Promise((resolve) => {
+            queue.push({ resolve });
+            tryNext();
+        }).then(() => {
+            // Return a release function
+            return function release() {
+                active--;
+                tryNext();
+            };
+        });
+    }
+
+    return { acquire };
+}
+
 class SvgToPngService {
     /**
      * Purpose: Constructor for constructor.
@@ -31,11 +78,12 @@ class SvgToPngService {
     }
 
     /**
-     * Purpose: Convert SVG string to PNG buffer
-     * Owner/Author: Syed Ashhad
-     * Created/Updated: January 2026
+     * Convert SVG string to PNG buffer
+     *
+     * @param {string} svgContent - SVG content as string
+     * @param {object} options - Conversion options
+     * @returns {Promise<Buffer>} PNG buffer
      */
-    
     async convert(svgContent, options = {}) {
         // Proxy mode: forward to Laravel backend during transition period
         if (this.useLaravelConverter && !options._localFallback) {
@@ -48,6 +96,11 @@ class SvgToPngService {
         }
 
         const startTime = Date.now();
+
+        // Acquire a concurrency slot before allocating Sharp buffers.
+        // This queues the caller if all slots are occupied, preventing memory
+        // exhaustion under burst load.
+        const release = await this._semaphore.acquire();
 
         try {
             const width = this.clampSize(options.width || options.size || this.defaultSize);
@@ -99,6 +152,9 @@ class SvgToPngService {
                 // DO NOT log full SVG content
             });
             throw new Error('PNG conversion failed. The SVG content may be invalid.');
+        } finally {
+            // Always release the semaphore slot, even on error
+            release();
         }
     }
 
@@ -107,7 +163,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: January 2026
      */
-    
+
     parseBackgroundColor(background, transparent) {
         if (transparent) {
             return { r: 0, g: 0, b: 0, alpha: 0 };
@@ -168,7 +224,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: January 2026
      */
-    
+
     async convertToBase64(svgContent, options = {}) {
         const pngBuffer = await this.convert(svgContent, options);
         return pngBuffer.toString('base64');
@@ -179,7 +235,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: January 2026
      */
-    
+
     async convertToDataUrl(svgContent, options = {}) {
         const base64 = await this.convertToBase64(svgContent, options);
         return `data:image/png;base64,${base64}`;
@@ -190,7 +246,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: January 2026
      */
-    
+
     async generateThumbnail(svgContent, size = 128) {
         return this.convertToBase64(svgContent, {
             size: Math.min(size, 256),
@@ -203,7 +259,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: January 2026
      */
-    
+
     preprocessSvg(svgContent, targetSize) {
         let processed = svgContent;
 
@@ -242,7 +298,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: January 2026
      */
-    
+
     convertCssToInline(svg) {
         // Extract style rules
         const styleMatch = svg.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
@@ -290,7 +346,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: January 2026
      */
-    
+
     parseCssRules(styleContent) {
         const rules = {};
         const ruleRegex = /([.#]?[\w-]+)\s*\{([^}]+)\}/g;
@@ -319,7 +375,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: January 2026
      */
-    
+
     cssToAttr(cssProp) {
         const mapping = {
             'fill': 'fill',
@@ -337,7 +393,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: January 2026
      */
-    
+
     fixCommonSvgIssues(svg) {
         let fixed = svg;
 
@@ -367,7 +423,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: March 2026
      */
-    
+
     async proxyToLaravel(svgContent, options = {}) {
         const axios = require('axios');
 
@@ -400,7 +456,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: January 2026
      */
-    
+
     clampSize(size) {
         return Math.min(this.maxSize, Math.max(this.minSize, size));
     }
@@ -410,7 +466,7 @@ class SvgToPngService {
      * Owner/Author: Syed Ashhad
      * Created/Updated: January 2026
      */
-    
+
     getInfo() {
         return {
             defaultSize: this.defaultSize,
