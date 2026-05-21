@@ -39,7 +39,17 @@
 const BaseProcessor = require('./BaseProcessor');
 const LaravelPaths = require('./LaravelPaths');
 
+/**
+ * Purpose: Class definition for FinderProcessor.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
+ */
 class FinderProcessor extends BaseProcessor {
+    /**
+     * Purpose: Constructor for constructor.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
+     */
     constructor() {
         super('FinderProcessor', 8);
 
@@ -105,19 +115,23 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Check if this processor should process the payload
-     * @param {Object} payload
-     * @returns {boolean}
+     * Purpose: Check if this processor should process the payload
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     shouldProcess(payload) {
         return true; // Always process to handle finder patterns
     }
 
     /**
-     * Process the payload to apply finder pattern shapes
-     * @param {Object} payload
-     * @returns {Object}
+     * Purpose: Process the payload to apply finder pattern shapes
+     * Owner/Author: Syed Ashhad
+     * Created: January 2026
+     * Last Editor: Syed Ashhad
+     * Last Updated: February 2026
      */
+    
     process(payload) {
         const { design } = payload;
 
@@ -149,8 +163,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Normalize shape name
+     * Purpose: Normalize shape name
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     normalizeShape(shape, shapeMap) {
         if (!shape) return 'square';
 
@@ -174,36 +191,31 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Get finder path generator
+     * Purpose: Get finder path generator
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     getFinderPathGenerator(shape) {
         return this.finderShapes[shape] || this.finderShapes['square'];
     }
 
     /**
-     * Get dot path generator
+     * Purpose: Get dot path generator
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     getDotPathGenerator(shape) {
         return this.dotShapes[shape] || this.dotShapes['square'];
     }
 
     /**
-     * Generate complete finder pattern SVG elements
-     *
-     * IMPORTANT: For Laravel ported shapes, the original paths are COMPOUND paths
-     * (donut shapes with inner cutouts built-in). For proper layered rendering:
-     * - outerPath: Solid outer boundary (filled with eye external color)
-     * - innerPath: Solid inner boundary (filled with background to create hollow ring)
-     * - dotPath: Center dot (filled with eye internal color)
-     *
-     * @param {string} finderShape
-     * @param {string} dotShape
-     * @param {number} x - Top-left X
-     * @param {number} y - Top-left Y
-     * @param {number} moduleSize
-     * @param {Object} colors - { outer, inner, dot }
-     * @returns {Object} - { outerPath, innerPath, dotPath }
+     * Purpose: Generate complete finder pattern SVG elements IMPORTANT: For Laravel ported shapes, the original paths are COMPOUND paths (donut shapes with inner cutouts built-in). For proper layered rendering: - outerPath: Solid outer boundary (filled with eye external color) - innerPath: Solid inner boundary (filled with background to create hollow ring) - dotPath: Center dot (filled with eye internal color)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     generateFinderPattern(finderShape, dotShape, x, y, moduleSize, colors = {}) {
         const outerSize = moduleSize * 7;
         const innerSize = moduleSize * 5;
@@ -242,18 +254,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Create a SOLID finder path from Laravel compound paths.
-     *
-     * Laravel paths are compound paths (donut shapes) with:
-     * - First subpath: Outer boundary
-     * - Second subpath: Inner cutout boundary
-     *
-     * This method extracts just one solid subpath for proper layered rendering.
-     *
-     * @param {string} shapeName - Laravel shape name
-     * @param {string} part - 'outer' or 'inner'
-     * @returns {Function} - Path generator function (x, y, size) => path
+     * Purpose: Create a SOLID finder path from Laravel compound paths. Laravel paths are compound paths (donut shapes) with: - First subpath: Outer boundary - Second subpath: Inner cutout boundary This method extracts just one solid subpath for proper layered rendering.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createLaravelFinderSolid(shapeName, part = 'outer') {
         return (x, y, size) => {
             const config = LaravelPaths.finders[shapeName];
@@ -294,10 +299,17 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Create a finder pattern using Laravel SVG path
-     * @param {string} shapeName
+     * Purpose: Create a finder pattern using Laravel SVG path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createLaravelFinder(shapeName) {
+        /**
+         * Purpose: Executes generator functionality.
+         * Owner/Author: Syed Ashhad
+         * Created/Updated: January 2026
+         */
         const generator = (x, y, size) => {
             const config = LaravelPaths.finders[shapeName];
             if (!config) {
@@ -338,10 +350,17 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Create a finder dot using Laravel SVG path
-     * @param {string} shapeName
+     * Purpose: Create a finder dot using Laravel SVG path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createLaravelDot(shapeName) {
+        /**
+         * Purpose: Executes generator functionality.
+         * Owner/Author: Syed Ashhad
+         * Created/Updated: January 2026
+         */
         const generator = (x, y, size) => {
             const config = LaravelPaths.dots[shapeName] || LaravelPaths.finders[shapeName];
 
@@ -411,15 +430,21 @@ class FinderProcessor extends BaseProcessor {
     // ========================================
 
     /**
-     * Square finder pattern
+     * Purpose: Square finder pattern
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createSquareFinder(x, y, size) {
         return 'M ' + x + ' ' + y + ' L ' + (x + size) + ' ' + y + ' L ' + (x + size) + ' ' + (y + size) + ' L ' + x + ' ' + (y + size) + ' Z';
     }
 
     /**
-     * Circle finder pattern
+     * Purpose: Circle finder pattern
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createCircleFinder(x, y, size) {
         const cx = x + size / 2;
         const cy = y + size / 2;
@@ -431,24 +456,33 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Rounded finder pattern
+     * Purpose: Rounded finder pattern
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRoundedFinder(x, y, size) {
         const r = size * 0.2;
         return this.createRoundedRect(x, y, size, size, r);
     }
 
     /**
-     * Extra rounded finder pattern
+     * Purpose: Extra rounded finder pattern
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createExtraRoundedFinder(x, y, size) {
         const r = size * 0.35;
         return this.createRoundedRect(x, y, size, size, r);
     }
 
     /**
-     * Leaf finder pattern (rounded on opposite corners)
+     * Purpose: Leaf finder pattern (rounded on opposite corners)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createLeafFinder(x, y, size) {
         const r = size * 0.4;
 
@@ -462,8 +496,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Diamond finder pattern
+     * Purpose: Diamond finder pattern
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createDiamondFinder(x, y, size) {
         const half = size / 2;
         const cx = x + half;
@@ -476,8 +513,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Eye-shaped finder pattern (pointed oval/almond shape)
+     * Purpose: Eye-shaped finder pattern (pointed oval/almond shape)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createEyeShapedFinder(x, y, size) {
         this.log(`createEyeShapedFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
@@ -495,8 +535,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Octagon finder pattern
+     * Purpose: Octagon finder pattern
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createOctagonFinder(x, y, size) {
         this.log(`createOctagonFinder called: x=${x}, y=${y}, size=${size}`);
         const cut = size * 0.29; // Corner cut amount (about 1/3)
@@ -513,8 +556,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Whirlpool finder pattern (rounded square with slight rotation effect)
+     * Purpose: Whirlpool finder pattern (rounded square with slight rotation effect)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createWhirlpoolFinder(x, y, size) {
         this.log(`createWhirlpoolFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
@@ -532,8 +578,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Water-drop finder pattern (teardrop shape)
+     * Purpose: Water-drop finder pattern (teardrop shape)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createWaterDropFinder(x, y, size) {
         this.log(`createWaterDropFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
@@ -548,8 +597,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Zigzag finder pattern (square with notched corners)
+     * Purpose: Zigzag finder pattern (square with notched corners)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createZigzagFinder(x, y, size) {
         this.log(`createZigzagFinder called: x=${x}, y=${y}, size=${size}`);
         const notch = size * 0.15; // Notch size
@@ -571,8 +623,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Circle-dots finder pattern (dotted circle outline)
+     * Purpose: Circle-dots finder pattern (dotted circle outline)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createCircleDotsFinder(x, y, size) {
         this.log(`createCircleDotsFinder called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
@@ -601,15 +656,21 @@ class FinderProcessor extends BaseProcessor {
     // ========================================
 
     /**
-     * Square dot
+     * Purpose: Square dot
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createSquareDot(x, y, size) {
         return 'M ' + x + ' ' + y + ' L ' + (x + size) + ' ' + y + ' L ' + (x + size) + ' ' + (y + size) + ' L ' + x + ' ' + (y + size) + ' Z';
     }
 
     /**
-     * Circle dot
+     * Purpose: Circle dot
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createCircleDot(x, y, size) {
         const cx = x + size / 2;
         const cy = y + size / 2;
@@ -621,16 +682,22 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Rounded dot
+     * Purpose: Rounded dot
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRoundedDot(x, y, size) {
         const r = size * 0.25;
         return this.createRoundedRect(x, y, size, size, r);
     }
 
     /**
-     * Diamond dot
+     * Purpose: Diamond dot
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createDiamondDot(x, y, size) {
         const half = size / 2;
         const cx = x + half;
@@ -643,8 +710,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Star dot
+     * Purpose: Star dot
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createStarDot(x, y, size) {
         const cx = x + size / 2;
         const cy = y + size / 2;
@@ -671,8 +741,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Heart dot
+     * Purpose: Heart dot
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createHeartDot(x, y, size) {
         const cx = x + size / 2;
 
@@ -686,8 +759,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Eye-shaped dot (pointed oval/almond)
+     * Purpose: Eye-shaped dot (pointed oval/almond)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createEyeShapedDot(x, y, size) {
         this.log('createEyeShapedDot called');
         const cx = x + size / 2;
@@ -702,8 +778,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Octagon dot
+     * Purpose: Octagon dot
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createOctagonDot(x, y, size) {
         this.log('createOctagonDot called');
         const cut = size * 0.28;
@@ -719,8 +798,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Whirlpool dot (twisted rounded shape)
+     * Purpose: Whirlpool dot (twisted rounded shape)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createWhirlpoolDot(x, y, size) {
         this.log('createWhirlpoolDot called');
         const cx = x + size / 2;
@@ -737,8 +819,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Water-drop dot (teardrop)
+     * Purpose: Water-drop dot (teardrop)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createWaterDropDot(x, y, size) {
         this.log('createWaterDropDot called');
         const cx = x + size / 2;
@@ -752,8 +837,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Zigzag dot (square with notched corners)
+     * Purpose: Zigzag dot (square with notched corners)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createZigzagDot(x, y, size) {
         this.log('createZigzagDot called');
         const notch = size * 0.18;
@@ -778,8 +866,11 @@ class FinderProcessor extends BaseProcessor {
     // ========================================
 
     /**
-     * Create a rounded rectangle path
+     * Purpose: Create a rounded rectangle path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRoundedRect(x, y, width, height, r) {
         r = Math.min(r, width / 2, height / 2);
 
@@ -795,8 +886,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Create a rounded rectangle with selective corners
+     * Purpose: Create a rounded rectangle with selective corners
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createSelectiveRoundedRect(x, y, width, height, r, corners = {}) {
         const { topLeft = true, topRight = true, bottomRight = true, bottomLeft = true } = corners;
         r = Math.min(r, width / 2, height / 2);
@@ -843,10 +937,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Get finder pattern positions for a QR matrix
-     * @param {number} matrixSize
-     * @returns {Array} - Array of {row, col} for each finder pattern's top-left corner
+     * Purpose: Get finder pattern positions for a QR matrix
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getFinderPositions(matrixSize) {
         return [
             { row: 0, col: 0 },                           // Top-left
@@ -856,12 +951,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Check if a position is within a finder pattern
-     * @param {number} row
-     * @param {number} col
-     * @param {number} matrixSize
-     * @returns {boolean}
+     * Purpose: Check if a position is within a finder pattern
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static isFinderPosition(row, col, matrixSize) {
         // Top-left finder
         if (row < 7 && col < 7) return true;
@@ -874,8 +968,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Get list of supported finder shapes
+     * Purpose: Get list of supported finder shapes
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getSupportedFinderShapes() {
         return [
             'square',
@@ -898,8 +995,11 @@ class FinderProcessor extends BaseProcessor {
     }
 
     /**
-     * Get list of supported finder dot shapes
+     * Purpose: Get list of supported finder dot shapes
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getSupportedDotShapes() {
         return [
             'square',

@@ -18,20 +18,23 @@ const { normalizeRequestForLaravel, getDesignParam } = require('../utils/paramet
 const { DOMParser, XMLSerializer } = require('@xmldom/xmldom');
 
 /**
- * Fix transform-origin for Sharp/libvips compatibility
- * Uses proper XML DOM parsing instead of regex to avoid corrupting
- * base64-encoded image data or other embedded content.
- *
- * Sharp/libvips doesn't support the transform-origin CSS property, so we convert:
- * transform="rotate(45) scale(0.5)" transform-origin="100 100"
- * Into:
- * transform="translate(100, 100) rotate(45) scale(0.5) translate(-100, -100)"
+ * Purpose: Fix transform-origin for Sharp/libvips compatibility Uses proper XML DOM parsing instead of regex to avoid corrupting base64-encoded image data or other embedded content. Sharp/libvips doesn't support the transform-origin CSS property, so we convert: transform="rotate(45) scale(0.5)" transform-origin="100 100" Into: transform="translate(100, 100) rotate(45) scale(0.5) translate(-100, -100)"
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 function fixTransformOrigin(svg) {
     try {
         const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
 
         // Walk all elements in the document
+        /**
+         * Purpose: Executes processNode functionality.
+         * Owner/Author: Syed Ashhad
+         * Created: January 2026
+         * Last Editor: Syed Ashhad
+         * Last Updated: February 2026
+         */
         function processNode(node) {
             if (node.nodeType !== 1) return; // Element nodes only
 

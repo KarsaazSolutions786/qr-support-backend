@@ -8,7 +8,17 @@
 const sharp = require('sharp');
 const logger = require('../utils/logger');
 
+/**
+ * Purpose: Class definition for SvgToPngService.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
+ */
 class SvgToPngService {
+    /**
+     * Purpose: Constructor for constructor.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
+     */
     constructor() {
         this.defaultSize = parseInt(process.env.DEFAULT_PNG_SIZE) || 512;
         this.defaultQuality = parseInt(process.env.DEFAULT_PNG_QUALITY) || 90;
@@ -21,12 +31,11 @@ class SvgToPngService {
     }
 
     /**
-     * Convert SVG string to PNG buffer
-     *
-     * @param {string} svgContent - SVG content as string
-     * @param {object} options - Conversion options
-     * @returns {Promise<Buffer>} PNG buffer
+     * Purpose: Convert SVG string to PNG buffer
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async convert(svgContent, options = {}) {
         // Proxy mode: forward to Laravel backend during transition period
         if (this.useLaravelConverter && !options._localFallback) {
@@ -94,12 +103,11 @@ class SvgToPngService {
     }
 
     /**
-     * Parse background color option
-     *
-     * @param {string|object} background - Background color (hex, rgb, or object)
-     * @param {boolean} transparent - If true, use transparent background
-     * @returns {object} RGBA object for Sharp
+     * Purpose: Parse background color option
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     parseBackgroundColor(background, transparent) {
         if (transparent) {
             return { r: 0, g: 0, b: 0, alpha: 0 };
@@ -156,36 +164,33 @@ class SvgToPngService {
     }
 
     /**
-     * Convert SVG to base64-encoded PNG
-     *
-     * @param {string} svgContent - SVG content
-     * @param {object} options - Conversion options
-     * @returns {Promise<string>} Base64 encoded PNG
+     * Purpose: Convert SVG to base64-encoded PNG
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async convertToBase64(svgContent, options = {}) {
         const pngBuffer = await this.convert(svgContent, options);
         return pngBuffer.toString('base64');
     }
 
     /**
-     * Convert SVG to data URL
-     *
-     * @param {string} svgContent - SVG content
-     * @param {object} options - Conversion options
-     * @returns {Promise<string>} Data URL
+     * Purpose: Convert SVG to data URL
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async convertToDataUrl(svgContent, options = {}) {
         const base64 = await this.convertToBase64(svgContent, options);
         return `data:image/png;base64,${base64}`;
     }
 
     /**
-     * Generate thumbnail from SVG
-     *
-     * @param {string} svgContent - SVG content
-     * @param {number} size - Thumbnail size (default 128)
-     * @returns {Promise<string>} Base64 encoded thumbnail
+     * Purpose: Generate thumbnail from SVG
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async generateThumbnail(svgContent, size = 128) {
         return this.convertToBase64(svgContent, {
             size: Math.min(size, 256),
@@ -194,12 +199,11 @@ class SvgToPngService {
     }
 
     /**
-     * Preprocess SVG for better Sharp compatibility
-     *
-     * @param {string} svgContent - Original SVG
-     * @param {number} targetSize - Target render size
-     * @returns {string} Processed SVG
+     * Purpose: Preprocess SVG for better Sharp compatibility
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     preprocessSvg(svgContent, targetSize) {
         let processed = svgContent;
 
@@ -234,8 +238,11 @@ class SvgToPngService {
     }
 
     /**
-     * Convert CSS styles to inline attributes
+     * Purpose: Convert CSS styles to inline attributes
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     convertCssToInline(svg) {
         // Extract style rules
         const styleMatch = svg.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
@@ -279,8 +286,11 @@ class SvgToPngService {
     }
 
     /**
-     * Parse CSS rules from style content
+     * Purpose: Parse CSS rules from style content
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     parseCssRules(styleContent) {
         const rules = {};
         const ruleRegex = /([.#]?[\w-]+)\s*\{([^}]+)\}/g;
@@ -305,8 +315,11 @@ class SvgToPngService {
     }
 
     /**
-     * Convert CSS property to SVG attribute
+     * Purpose: Convert CSS property to SVG attribute
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     cssToAttr(cssProp) {
         const mapping = {
             'fill': 'fill',
@@ -320,8 +333,11 @@ class SvgToPngService {
     }
 
     /**
-     * Fix common SVG issues that cause rendering problems
+     * Purpose: Fix common SVG issues that cause rendering problems
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     fixCommonSvgIssues(svg) {
         let fixed = svg;
 
@@ -347,15 +363,11 @@ class SvgToPngService {
     }
 
     /**
-     * Proxy SVG-to-PNG conversion to the Laravel backend.
-     *
-     * Used during the 30-day transition period when USE_LARAVEL_CONVERTER=true.
-     * Falls back to local Sharp conversion on failure.
-     *
-     * @param {string} svgContent - SVG content
-     * @param {object} options    - Conversion options
-     * @returns {Promise<Buffer>} PNG buffer from Laravel
+     * Purpose: Proxy SVG-to-PNG conversion to the Laravel backend. Used during the 30-day transition period when USE_LARAVEL_CONVERTER=true. Falls back to local Sharp conversion on failure.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: March 2026
      */
+    
     async proxyToLaravel(svgContent, options = {}) {
         const axios = require('axios');
 
@@ -384,15 +396,21 @@ class SvgToPngService {
     }
 
     /**
-     * Clamp size to valid range
+     * Purpose: Clamp size to valid range
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     clampSize(size) {
         return Math.min(this.maxSize, Math.max(this.minSize, size));
     }
 
     /**
-     * Get service info
+     * Purpose: Get service info
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     getInfo() {
         return {
             defaultSize: this.defaultSize,

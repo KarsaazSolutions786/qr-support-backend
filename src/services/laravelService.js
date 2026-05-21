@@ -32,7 +32,17 @@ const httpsAgent = new https.Agent({
     maxFreeSockets: 5,
 });
 
+/**
+ * Purpose: Class definition for LaravelService.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
+ */
 class LaravelService {
+    /**
+     * Purpose: Constructor for constructor.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
+     */
     constructor() {
         this.baseUrl = process.env.LARAVEL_BACKEND_URL || 'http://localhost:8000';
         this.timeout = parseInt(process.env.LARAVEL_API_TIMEOUT) || 60000;
@@ -80,15 +90,11 @@ class LaravelService {
     }
 
     /**
-     * Make authenticated request to Laravel with retry logic
-     *
-     * @param {string} method - HTTP method
-     * @param {string} endpoint - API endpoint
-     * @param {object} data - Request data
-     * @param {string} authToken - Bearer token
-     * @param {number} retryCount - Current retry attempt
-     * @returns {Promise<object>} Response data
+     * Purpose: Make authenticated request to Laravel with retry logic
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async request(method, endpoint, data = null, authToken = null, retryCount = 0) {
         const config = {
             method,
@@ -141,22 +147,21 @@ class LaravelService {
     }
 
     /**
-     * Delay helper for retry logic
+     * Purpose: Delay helper for retry logic
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     /**
-     * Get QR code preview SVG from Laravel Flutter endpoint
-     *
-     * This is the PRIMARY method for generating QR codes for Flutter.
-     * Always normalizes parameters to ensure Laravel receives correct format.
-     *
-     * @param {object} previewData - Preview request data (may have camelCase keys)
-     * @param {string} authToken - Optional auth token
-     * @returns {Promise<object>} Normalized response with SVG content
+     * Purpose: Get QR code preview SVG from Laravel Flutter endpoint This is the PRIMARY method for generating QR codes for Flutter. Always normalizes parameters to ensure Laravel receives correct format.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async getPreviewSvg(previewData, authToken = null) {
         // Normalize parameters for Laravel (camelCase → snake_case)
         const normalizedData = normalizeRequestForLaravel(previewData);
@@ -184,14 +189,11 @@ class LaravelService {
     }
 
     /**
-     * Extract SVG content from various Laravel response formats
-     *
-     * Laravel might return SVG in different ways depending on the endpoint version.
-     * This method handles ALL known formats.
-     *
-     * @param {object} response - Laravel API response
-     * @returns {object} Normalized data object with svg property
+     * Purpose: Extract SVG content from various Laravel response formats Laravel might return SVG in different ways depending on the endpoint version. This method handles ALL known formats.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     extractSvgFromResponse(response) {
         logger.debug('Extracting SVG from response...');
 
@@ -268,12 +270,11 @@ class LaravelService {
     }
 
     /**
-     * Get QR code SVG from Laravel (for saved QR codes)
-     *
-     * @param {number} id - QR code ID
-     * @param {string} authToken - Auth token
-     * @returns {Promise<string>} SVG content
+     * Purpose: Get QR code SVG from Laravel (for saved QR codes)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async getQRCodeSvg(id, authToken) {
         const response = await this.client.get(`/api/flutter/qrcodes/${id}/svg`, {
             headers: {
@@ -287,31 +288,31 @@ class LaravelService {
     }
 
     /**
-     * Get QR code details from Laravel
-     *
-     * @param {number} id - QR code ID
-     * @param {string} authToken - Auth token
-     * @returns {Promise<object>} QR code data
+     * Purpose: Get QR code details from Laravel
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async getQRCode(id, authToken) {
         return this.request('GET', `/api/flutter/v2/qrcodes/${id}`, null, authToken);
     }
 
     /**
-     * Get rendering capabilities from Laravel
-     *
-     * @returns {Promise<object>} Capabilities
+     * Purpose: Get rendering capabilities from Laravel
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async getCapabilities() {
         return this.request('GET', '/api/flutter/v2/capabilities');
     }
 
     /**
-     * Proxy any request to Laravel
-     *
-     * @param {object} req - Express request object
-     * @returns {Promise<object>} Laravel response
+     * Purpose: Proxy any request to Laravel
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async proxyRequest(req) {
         const endpoint = req.path.replace(/^\/api\/proxy/, '');
         const authToken = req.headers['authorization'];
@@ -352,8 +353,11 @@ class LaravelService {
     }
 
     /**
-     * Health check - verify Laravel is accessible
+     * Purpose: Health check - verify Laravel is accessible
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async healthCheck() {
         try {
             const response = await this.client.get('/api/health', { timeout: 5000 });
@@ -375,14 +379,11 @@ class LaravelService {
     // ─── JSON-RPC 2.0 Transport ──────────────────────────────────────
 
     /**
-     * Call a single JSON-RPC 2.0 method on the Laravel backend.
-     *
-     * @param {string} method - RPC method (e.g., "qrcode.list", "designAsset.analyze")
-     * @param {object} params - Method parameters
-     * @param {string|null} authToken - Bearer token (null for public endpoint)
-     * @returns {Promise<*>} The result field from the RPC response
-     * @throws {object} RPC error with code/message/data
+     * Purpose: Call a single JSON-RPC 2.0 method on the Laravel backend.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: March 2026
      */
+    
     async rpc(method, params = {}, authToken = null) {
         const endpoint = authToken ? '/api/rpc' : '/api/rpc/public';
         const id = ++this._rpcId;
@@ -424,12 +425,11 @@ class LaravelService {
     }
 
     /**
-     * Call multiple JSON-RPC 2.0 methods in a single HTTP request.
-     *
-     * @param {Array<{method: string, params?: object}>} calls - Method calls
-     * @param {string|null} authToken - Bearer token
-     * @returns {Promise<Map<string, {error: object|null, result: *|null}>>}
+     * Purpose: Call multiple JSON-RPC 2.0 methods in a single HTTP request.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: March 2026
      */
+    
     async rpcBatch(calls, authToken = null) {
         const endpoint = authToken ? '/api/rpc' : '/api/rpc/public';
 

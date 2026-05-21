@@ -36,9 +36,11 @@ const methods = {
 // ─── Method Handlers ────────────────────────────────────────────────────────
 
 /**
- * qr.preview — Proxy to Laravel, get SVG, convert to PNG
- * Params: { qrcode_id, type, ...designParams }
+ * Purpose: qr.preview — Proxy to Laravel, get SVG, convert to PNG Params: { qrcode_id, type, ...designParams }
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: March 2026
  */
+
 async function handleQrPreview(params) {
     const { qrcode_id, type, size = 512, quality = 90, ...designParams } = params || {};
 
@@ -73,9 +75,11 @@ async function handleQrPreview(params) {
 }
 
 /**
- * qr.render — Direct SVG to PNG conversion (no Laravel proxy)
- * Params: { svg, size?, quality?, format? }
+ * Purpose: qr.render — Direct SVG to PNG conversion (no Laravel proxy) Params: { svg, size?, quality?, format? }
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: March 2026
  */
+
 async function handleQrRender(params) {
     const { svg, size = 512, quality = 90, format = 'base64' } = params || {};
 
@@ -109,8 +113,11 @@ async function handleQrRender(params) {
 }
 
 /**
- * qr.capabilities — Return supported QR generation capabilities
+ * Purpose: qr.capabilities — Return supported QR generation capabilities
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: March 2026
  */
+
 async function handleQrCapabilities() {
     return {
         version: '3.0.0',
@@ -125,16 +132,31 @@ async function handleQrCapabilities() {
 
 // ─── Core RPC Dispatcher ────────────────────────────────────────────────────
 
+/**
+ * Purpose: Executes makeError functionality.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: March 2026
+ */
 function makeError(code, message, data, id = null) {
     const err = { code, message };
     if (data !== undefined) err.data = data;
     return { jsonrpc: '2.0', error: err, id };
 }
 
+/**
+ * Purpose: Executes makeSuccess functionality.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: March 2026
+ */
 function makeSuccess(result, id) {
     return { jsonrpc: '2.0', result, id };
 }
 
+/**
+ * Purpose: Executes dispatchSingle functionality.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: March 2026
+ */
 async function dispatchSingle(request) {
     // Validate JSON-RPC 2.0 structure
     if (!request || typeof request !== 'object') {
@@ -258,6 +280,11 @@ exports.methods = (req, res) => {
     });
 };
 
+/**
+ * Purpose: Retrieves methoddescription.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: March 2026
+ */
 function getMethodDescription(name) {
     const descriptions = {
         'qr.preview': 'Generate QR code preview via Laravel proxy (SVG → PNG)',

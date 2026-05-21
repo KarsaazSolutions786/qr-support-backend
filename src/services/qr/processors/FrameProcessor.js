@@ -20,7 +20,17 @@
  */
 const BaseProcessor = require('./BaseProcessor');
 
+/**
+ * Purpose: Class definition for FrameProcessor.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
+ */
 class FrameProcessor extends BaseProcessor {
+    /**
+     * Purpose: Constructor for constructor.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
+     */
     constructor() {
         super('FrameProcessor', 110);
 
@@ -59,9 +69,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Initialize all Laravel shape definitions
-     * Each shape has: shapeId, symbolPath, symbolViewBox, framePath (optional), frameViewBox, transform
+     * Purpose: Initialize all Laravel shape definitions Each shape has: shapeId, symbolPath, symbolViewBox, framePath (optional), frameViewBox, transform
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     initializeLaravelShapes() {
         return {
             // Apple shape with frame
@@ -426,10 +438,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Check if this processor should process the payload
-     * @param {Object} payload
-     * @returns {boolean}
+     * Purpose: Check if this processor should process the payload
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     shouldProcess(payload) {
         const { design } = payload;
         // Check advancedShape (stickers), shape (outlined shapes like apple, bag), and frame
@@ -444,10 +457,13 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Process the payload to prepare frame data
-     * @param {Object} payload
-     * @returns {Object}
+     * Purpose: Process the payload to prepare frame data
+     * Owner/Author: Syed Ashhad
+     * Created: January 2026
+     * Last Editor: Syed Ashhad
+     * Last Updated: February 2026
      */
+    
     process(payload) {
         const { design, size } = payload;
 
@@ -487,10 +503,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Get default text for frame type
-     * @param {string} frameType
-     * @returns {string}
+     * Purpose: Get default text for frame type
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     getDefaultText(frameType) {
         const defaults = {
             'scan-me': 'SCAN ME',
@@ -516,12 +533,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Generate frame SVG elements
-     * @param {Object} frameInfo - Frame info from payload
-     * @param {number} size - Total SVG size
-     * @param {number} qrSize - QR code size (without frame)
-     * @returns {Object} - { beforeQR: string, afterQR: string, defs: string }
+     * Purpose: Generate frame SVG elements
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     generateFrameSVG(frameInfo, size, qrSize) {
         if (!frameInfo || frameInfo.type === 'none') {
             return { beforeQR: '', afterQR: '', defs: '' };
@@ -536,13 +552,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Create Laravel shape frame SVG
-     * @param {string} shapeId - Shape identifier
-     * @param {Object} frameInfo - Frame information
-     * @param {number} size - SVG size
-     * @param {number} qrSize - QR code size
-     * @returns {Object}
+     * Purpose: Create Laravel shape frame SVG
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createLaravelShapeFrame(shapeId, frameInfo, size, qrSize) {
         const shapeData = this.laravelShapes[shapeId];
         if (!shapeData) {
@@ -599,8 +613,11 @@ class FrameProcessor extends BaseProcessor {
     // ========================================
 
     /**
-     * Simple "Scan Me" text below QR
+     * Purpose: Simple "Scan Me" text below QR
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createScanMeFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const textY = size - (size * 0.05);
@@ -627,8 +644,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Four corners decorative frame with text at bottom
+     * Purpose: Four corners decorative frame with text at bottom
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createFourCornersFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const cornerSize = size * 0.08;
@@ -671,8 +691,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Rounded border frame
+     * Purpose: Rounded border frame
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRoundedFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const padding = size * 0.03;
@@ -708,8 +731,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Banner at bottom
+     * Purpose: Banner at bottom
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createBannerBottomFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const bannerHeight = size * 0.12;
@@ -743,8 +769,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Healthcare themed frame with medical cross
+     * Purpose: Healthcare themed frame with medical cross
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createHealthcareFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const crossSize = size * 0.08;
@@ -784,8 +813,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * WiFi themed frame
+     * Purpose: WiFi themed frame
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createWifiFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const iconSize = size * 0.1;
@@ -824,8 +856,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Review collector with stars
+     * Purpose: Review collector with stars
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createReviewFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const starSize = size * 0.04;
@@ -860,8 +895,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Social media themed frame
+     * Purpose: Social media themed frame
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createSocialFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const iconSize = size * 0.06;
@@ -900,8 +938,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Ticket/coupon style frame
+     * Purpose: Ticket/coupon style frame
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createTicketFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const padding = size * 0.02;
@@ -947,9 +988,11 @@ class FrameProcessor extends BaseProcessor {
     // ========================================
 
     /**
-     * Simple text at bottom - QR code with text banner below
-     * Matches Laravel's simple-text-bottom.svg template
+     * Purpose: Simple text at bottom - QR code with text banner below Matches Laravel's simple-text-bottom.svg template
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createSimpleTextBottomFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         // Adjusted proportions to fit within the canvas
@@ -996,9 +1039,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Simple text at top - QR code with text banner above
-     * Matches Laravel's simple-text-top.svg template
+     * Purpose: Simple text at top - QR code with text banner above Matches Laravel's simple-text-top.svg template
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createSimpleTextTopFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         // Adjusted proportions to fit within the canvas
@@ -1045,9 +1090,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Rectangular frame with text at bottom
-     * Matches Laravel's rect-frame-text-bottom.svg template
+     * Purpose: Rectangular frame with text at bottom Matches Laravel's rect-frame-text-bottom.svg template
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRectFrameTextBottomFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const padding = size * 0.04;
@@ -1106,9 +1153,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Rectangular frame with text at top
-     * Matches Laravel's rect-frame-text-top.svg template
+     * Purpose: Rectangular frame with text at top Matches Laravel's rect-frame-text-top.svg template
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRectFrameTextTopFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const padding = size * 0.04;
@@ -1167,8 +1216,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Four corners decorative frame with text at top
+     * Purpose: Four corners decorative frame with text at top
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createFourCornersTopFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const cornerSize = size * 0.08;
@@ -1211,9 +1263,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Coupon style frame with perforated edges
-     * Matches Laravel's coupon.svg template
+     * Purpose: Coupon style frame with perforated edges Matches Laravel's coupon.svg template
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createCouponFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const padding = size * 0.05;
@@ -1272,9 +1326,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Pincode protected frame with lock icon
-     * Matches Laravel's pincode-protected.svg template
+     * Purpose: Pincode protected frame with lock icon Matches Laravel's pincode-protected.svg template
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createPincodeProtectedFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const lockSize = size * 0.12;
@@ -1323,9 +1379,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * QR Code details frame
-     * Matches Laravel's qrcode-details.svg template
+     * Purpose: QR Code details frame Matches Laravel's qrcode-details.svg template
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createQRCodeDetailsFrame(frameInfo, size, qrSize) {
         const { color, textColor, text, dropShadow } = frameInfo;
         const padding = size * 0.03;
@@ -1373,8 +1431,11 @@ class FrameProcessor extends BaseProcessor {
     // ========================================
 
     /**
-     * Create drop shadow filter definition
+     * Purpose: Create drop shadow filter definition
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createDropShadowDef(id) {
         return `
             <filter id="${id}" x="-20%" y="-20%" width="140%" height="140%">
@@ -1384,8 +1445,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Create a star path
+     * Purpose: Create a star path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createStarPath(cx, cy, size, fill) {
         const outerR = size;
         const innerR = size * 0.4;
@@ -1410,8 +1474,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Escape XML special characters
+     * Purpose: Escape XML special characters
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     escapeXml(text) {
         if (!text) return '';
         return text
@@ -1423,8 +1490,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Get list of supported frame types (basic frames)
+     * Purpose: Get list of supported frame types (basic frames)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getSupportedBasicFrames() {
         return [
             'none',
@@ -1450,8 +1520,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Get list of all Laravel shapes
+     * Purpose: Get list of all Laravel shapes
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getSupportedLaravelShapes() {
         return [
             'apple', 'bag', 'bakery', 'barn', 'book', 'boot', 'brain', 'builder',
@@ -1467,8 +1540,11 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Get list of all supported frame types
+     * Purpose: Get list of all supported frame types
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getSupportedFrames() {
         return [
             ...FrameProcessor.getSupportedBasicFrames(),
@@ -1477,20 +1553,22 @@ class FrameProcessor extends BaseProcessor {
     }
 
     /**
-     * Check if a shape has a frame border
-     * @param {string} shapeId
-     * @returns {boolean}
+     * Purpose: Check if a shape has a frame border
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     hasFrameBorder(shapeId) {
         const shape = this.laravelShapes[shapeId];
         return shape ? shape.hasFrame === true : false;
     }
 
     /**
-     * Get shape data by ID
-     * @param {string} shapeId
-     * @returns {Object|null}
+     * Purpose: Get shape data by ID
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     getShapeData(shapeId) {
         return this.laravelShapes[shapeId] || null;
     }

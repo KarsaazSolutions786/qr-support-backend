@@ -16,7 +16,17 @@ const https = require('https');
 const http = require('http');
 const sharp = require('sharp');
 
+/**
+ * Purpose: Class definition for LogoProcessor.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
+ */
 class LogoProcessor extends BaseProcessor {
+    /**
+     * Purpose: Constructor for constructor.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
+     */
     constructor() {
         super('LogoProcessor', 200);
 
@@ -33,10 +43,11 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Check if this processor should process the payload
-     * @param {Object} payload
-     * @returns {boolean}
+     * Purpose: Check if this processor should process the payload
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     shouldProcess(payload) {
         const { design } = payload;
         // Process if logo URL or logo data is provided
@@ -44,10 +55,13 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Process the payload to embed logo
-     * @param {Object} payload
-     * @returns {Object}
+     * Purpose: Process the payload to embed logo
+     * Owner/Author: Syed Ashhad
+     * Created: January 2026
+     * Last Editor: Syed Ashhad
+     * Last Updated: February 2026
      */
+    
     process(payload) {
         const { design, size } = payload;
 
@@ -115,10 +129,13 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Load logo from URL or base64
-     * @param {string} source - URL or base64 data
-     * @returns {Object|Promise|null} - { base64, mimeType } or Promise if async
+     * Purpose: Load logo from URL or base64
+     * Owner/Author: Syed Ashhad
+     * Created: January 2026
+     * Last Editor: Syed Ashhad
+     * Last Updated: February 2026
      */
+    
     loadLogo(source) {
         // Check cache
         if (this.logoCache.has(source)) {
@@ -159,10 +176,11 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Parse data URL to extract base64 and mime type
-     * @param {string} dataUrl
-     * @returns {Object}
+     * Purpose: Parse data URL to extract base64 and mime type
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     parseDataUrl(dataUrl) {
         const matches = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
         if (matches) {
@@ -175,10 +193,11 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Fetch logo from remote URL
-     * @param {string} url
-     * @returns {Promise<Object>}
+     * Purpose: Fetch logo from remote URL
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     fetchLogo(url) {
         return new Promise((resolve, reject) => {
             const protocol = url.startsWith('https://') ? https : http;
@@ -217,10 +236,11 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Load logo from local file
-     * @param {string} filePath
-     * @returns {Promise<Object>}
+     * Purpose: Load logo from local file
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async loadLocalLogo(filePath) {
         const fs = require('fs').promises;
         const path = require('path');
@@ -244,11 +264,11 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Generate SVG elements for logo embedding
-     * @param {Object} logoInfo - Logo info from payload
-     * @param {number} size - QR code size
-     * @returns {string} - SVG content for logo
+     * Purpose: Generate SVG elements for logo embedding
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     generateLogoSVG(logoInfo) {
         if (!logoInfo) return '';
 
@@ -283,14 +303,11 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Create background path for logo
-     * @param {string} shape
-     * @param {number} x
-     * @param {number} y
-     * @param {number} width
-     * @param {number} height
-     * @returns {string}
+     * Purpose: Create background path for logo
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createBackgroundPath(shape, x, y, width, height) {
         switch (shape) {
             case 'circle':
@@ -305,8 +322,11 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Create circle background path
+     * Purpose: Create circle background path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createCircleBackground(x, y, width, height) {
         const cx = x + width / 2;
         const cy = y + height / 2;
@@ -318,8 +338,11 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Create square background path
+     * Purpose: Create square background path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createSquareBackground(x, y, width, height) {
         return 'M ' + x + ' ' + y + ' ' +
             'L ' + (x + width) + ' ' + y + ' ' +
@@ -328,8 +351,11 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Create rounded background path
+     * Purpose: Create rounded background path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRoundedBackground(x, y, width, height) {
         const r = Math.min(width, height) * 0.15;
 
@@ -345,16 +371,21 @@ class LogoProcessor extends BaseProcessor {
     }
 
     /**
-     * Clear logo cache
+     * Purpose: Clear logo cache
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     clearCache() {
         this.logoCache.clear();
     }
 
     /**
-     * Get supported background shapes
-     * @returns {string[]}
+     * Purpose: Get supported background shapes
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getSupportedBackgroundShapes() {
         return ['circle', 'square', 'rounded', 'none'];
     }

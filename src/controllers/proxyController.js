@@ -36,8 +36,11 @@ const BLOCKED_PROXY_PATHS = [
 ];
 
 /**
- * Validate that the proxy target path is safe
+ * Purpose: Validate that the proxy target path is safe
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: February 2026
  */
+
 function isProxyPathAllowed(path) {
     // Normalize path
     const normalizedPath = decodeURIComponent(path).replace(/\\/g, '/').toLowerCase();

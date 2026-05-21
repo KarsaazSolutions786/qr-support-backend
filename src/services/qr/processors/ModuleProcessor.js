@@ -26,7 +26,17 @@
  */
 const BaseProcessor = require('./BaseProcessor');
 
+/**
+ * Purpose: Class definition for ModuleProcessor.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
+ */
 class ModuleProcessor extends BaseProcessor {
+    /**
+     * Purpose: Constructor for constructor.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
+     */
     constructor() {
         super('ModuleProcessor', 7);
 
@@ -77,19 +87,23 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Check if this processor should process the payload
-     * @param {Object} payload
-     * @returns {boolean}
+     * Purpose: Check if this processor should process the payload
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     shouldProcess(payload) {
         return true; // Always process to handle module rendering
     }
 
     /**
-     * Process the payload to apply module shapes
-     * @param {Object} payload
-     * @returns {Object}
+     * Purpose: Process the payload to apply module shapes
+     * Owner/Author: Syed Ashhad
+     * Created: January 2026
+     * Last Editor: Syed Ashhad
+     * Last Updated: February 2026
      */
+    
     process(payload) {
         const { design, qrMatrix, moduleSize, startX, startY } = payload;
 
@@ -109,10 +123,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Normalize shape name to a standard format
-     * @param {string} shape
-     * @returns {string}
+     * Purpose: Normalize shape name to a standard format
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     normalizeShape(shape) {
         if (!shape) return 'square';
 
@@ -135,23 +150,21 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Get the path generator function for a shape
-     * @param {string} shape
-     * @returns {Function}
+     * Purpose: Get the path generator function for a shape
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     getPathGenerator(shape) {
         return this.shapes[shape] || this.shapes['square'];
     }
 
     /**
-     * Generate path data for a module at given position
-     * @param {string} shape - Shape name
-     * @param {number} x - X position
-     * @param {number} y - Y position
-     * @param {number} size - Module size
-     * @param {Object} context - Context with neighbor info
-     * @returns {string} - SVG path data
+     * Purpose: Generate path data for a module at given position
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     generateModulePath(shape, x, y, size, context = {}) {
         const generator = this.getPathGenerator(shape);
         if (!generator) {
@@ -166,15 +179,21 @@ class ModuleProcessor extends BaseProcessor {
     // ========================================
 
     /**
-     * Square module (default)
+     * Purpose: Square module (default)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createSquare(x, y, size, context = {}) {
         return `M ${x} ${y} L ${x + size} ${y} L ${x + size} ${y + size} L ${x} ${y + size} Z`;
     }
 
     /**
-     * Circular dot module
+     * Purpose: Circular dot module
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createDot(x, y, size, context = {}) {
         const cx = x + size / 2;
         const cy = y + size / 2;
@@ -187,24 +206,33 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Rounded square module
+     * Purpose: Rounded square module
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRounded(x, y, size, context = {}) {
         const r = size * 0.25; // Corner radius
         return this.createRoundedRect(x, y, size, size, r);
     }
 
     /**
-     * Extra rounded module (almost circular)
+     * Purpose: Extra rounded module (almost circular)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createExtraRounded(x, y, size, context = {}) {
         const r = size * 0.4; // Larger corner radius
         return this.createRoundedRect(x, y, size, size, r);
     }
 
     /**
-     * Rhombus/Diamond module
+     * Purpose: Rhombus/Diamond module
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRhombus(x, y, size, context = {}) {
         const half = size / 2;
         const cx = x + half;
@@ -217,8 +245,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Vertical line module
+     * Purpose: Vertical line module
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createVerticalLine(x, y, size, context = {}) {
         const width = size * 0.35;
         const offset = (size - width) / 2;
@@ -230,8 +261,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Horizontal line module
+     * Purpose: Horizontal line module
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createHorizontalLine(x, y, size, context = {}) {
         const height = size * 0.35;
         const offset = (size - height) / 2;
@@ -243,9 +277,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Classy module - connected dots with neighbors
-     * Creates smooth connections between adjacent modules
+     * Purpose: Classy module - connected dots with neighbors Creates smooth connections between adjacent modules
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createClassy(x, y, size, context = {}) {
         const { hasTop, hasRight, hasBottom, hasLeft } = context;
         const half = size / 2;
@@ -279,8 +315,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Classy rounded - like classy but with rounded corners
+     * Purpose: Classy rounded - like classy but with rounded corners
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createClassyRounded(x, y, size, context = {}) {
         const { hasTop, hasRight, hasBottom, hasLeft } = context;
         const r = size * 0.15;
@@ -300,8 +339,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Star-shaped module
+     * Purpose: Star-shaped module
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createStar(x, y, size, context = {}) {
         const cx = x + size / 2;
         const cy = y + size / 2;
@@ -328,8 +370,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Heart-shaped module
+     * Purpose: Heart-shaped module
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createHeart(x, y, size, context = {}) {
         const cx = x + size / 2;
         const cy = y + size / 2;
@@ -349,8 +394,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * 7-pointed star module
+     * Purpose: 7-pointed star module
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createStar7(x, y, size, context = {}) {
         const cx = x + size / 2;
         const cy = y + size / 2;
@@ -377,8 +425,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Triangle module (pointing up)
+     * Purpose: Triangle module (pointing up)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createTriangle(x, y, size, context = {}) {
         const cx = x + size / 2;
         const padding = size * 0.1;
@@ -389,8 +440,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Triangle-end module (pointing right, like an arrow/chevron)
+     * Purpose: Triangle-end module (pointing right, like an arrow/chevron)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createTriangleEnd(x, y, size, context = {}) {
         console.log(`[ModuleProcessor] createTriangleEnd called: x=${x}, y=${y}, size=${size}`);
         const pad = size * 0.05;
@@ -405,8 +459,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Fish-shaped module
+     * Purpose: Fish-shaped module
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createFish(x, y, size, context = {}) {
         const cx = x + size / 2;
         const cy = y + size / 2;
@@ -430,8 +487,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Tree-shaped module (simple pine tree)
+     * Purpose: Tree-shaped module (simple pine tree)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createTree(x, y, size, context = {}) {
         const cx = x + size / 2;
         const trunkWidth = size * 0.2;
@@ -453,8 +513,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Roundness module (very rounded square, almost pill-shaped)
+     * Purpose: Roundness module (very rounded square, almost pill-shaped)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRoundness(x, y, size, context = {}) {
         console.log(`[ModuleProcessor] createRoundness called: x=${x}, y=${y}, size=${size}`);
         // Create an almost-circular rounded rectangle
@@ -467,9 +530,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Two triangles with circle module
-     * Top triangle pointing down, bottom triangle pointing up, with circle in center
+     * Purpose: Two triangles with circle module Top triangle pointing down, bottom triangle pointing up, with circle in center
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createTwoTrianglesWithCircle(x, y, size, context = {}) {
         console.log(`[ModuleProcessor] createTwoTrianglesWithCircle called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
@@ -492,9 +557,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Four triangles module - pinwheel/windmill style with visible gaps
-     * Four separate triangles pointing inward from corners with gaps between them
+     * Purpose: Four triangles module - pinwheel/windmill style with visible gaps Four separate triangles pointing inward from corners with gaps between them
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createFourTriangles(x, y, size, context = {}) {
         console.log(`[ModuleProcessor] createFourTriangles called: x=${x}, y=${y}, size=${size}`);
         const cx = x + size / 2;
@@ -524,8 +591,11 @@ class ModuleProcessor extends BaseProcessor {
     // ========================================
 
     /**
-     * Create a rounded rectangle path
+     * Purpose: Create a rounded rectangle path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRoundedRect(x, y, width, height, r) {
         r = Math.min(r, width / 2, height / 2);
 
@@ -541,8 +611,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Create a rounded rectangle with selective corners
+     * Purpose: Create a rounded rectangle with selective corners
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createSelectiveRoundedRect(x, y, width, height, r, corners = {}) {
         const { topLeft = true, topRight = true, bottomRight = true, bottomLeft = true } = corners;
         r = Math.min(r, width / 2, height / 2);
@@ -589,13 +662,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Get neighbor information for a module
-     * @param {Array} matrix - QR matrix
-     * @param {number} row
-     * @param {number} col
-     * @param {number} size - Matrix size
-     * @returns {Object}
+     * Purpose: Get neighbor information for a module
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getNeighborContext(matrix, row, col, size) {
         return {
             hasTop: row > 0 && matrix[row - 1][col] === 1,
@@ -610,9 +681,11 @@ class ModuleProcessor extends BaseProcessor {
     }
 
     /**
-     * Get list of supported shapes
-     * @returns {string[]}
+     * Purpose: Get list of supported shapes
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getSupportedShapes() {
         return [
             'square',

@@ -9,7 +9,17 @@ const Redis = require('ioredis');
 const crypto = require('crypto');
 const logger = require('../utils/logger');
 
+/**
+ * Purpose: Class definition for CacheService.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
+ */
 class CacheService {
+    /**
+     * Purpose: Constructor for constructor.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
+     */
     constructor() {
         this.enabled = process.env.CACHE_ENABLED === 'true';
         this.ttl = parseInt(process.env.CACHE_TTL) || 300;
@@ -23,8 +33,11 @@ class CacheService {
     }
 
     /**
-     * Initialize Redis connection
+     * Purpose: Initialize Redis connection
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     initRedis() {
         try {
             this.redis = new Redis({
@@ -56,8 +69,11 @@ class CacheService {
     }
 
     /**
-     * Generate cache key from parameters
+     * Purpose: Generate cache key from parameters
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     generateKey(params) {
         const hash = crypto
             .createHash('md5')
@@ -67,11 +83,11 @@ class CacheService {
     }
 
     /**
-     * Get value from cache
-     *
-     * @param {string} key - Cache key
-     * @returns {Promise<Buffer|null>} Cached value or null
+     * Purpose: Get value from cache
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async get(key) {
         if (!this.enabled) return null;
 
@@ -105,12 +121,11 @@ class CacheService {
     }
 
     /**
-     * Set value in cache
-     *
-     * @param {string} key - Cache key
-     * @param {Buffer|string} value - Value to cache
-     * @param {number} ttl - TTL in seconds (optional)
+     * Purpose: Set value in cache
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async set(key, value, ttl = null) {
         if (!this.enabled) return;
 
@@ -149,10 +164,11 @@ class CacheService {
     }
 
     /**
-     * Delete value from cache
-     *
-     * @param {string} key - Cache key
+     * Purpose: Delete value from cache
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async delete(key) {
         try {
             if (this.redis) {
@@ -168,10 +184,11 @@ class CacheService {
     }
 
     /**
-     * Clear all cache entries with prefix
-     *
-     * @param {string} prefix - Key prefix to clear
+     * Purpose: Clear all cache entries with prefix
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async clearPrefix(prefix) {
         try {
             if (this.redis) {
@@ -208,8 +225,11 @@ class CacheService {
     }
 
     /**
-     * Clean up expired entries in memory cache
+     * Purpose: Clean up expired entries in memory cache
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     cleanupMemoryCache() {
         const now = Date.now();
         const ttlMs = this.ttl * 1000;
@@ -229,8 +249,11 @@ class CacheService {
     }
 
     /**
-     * Get cache statistics
+     * Purpose: Get cache statistics
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     async getStats() {
         const stats = {
             enabled: this.enabled,

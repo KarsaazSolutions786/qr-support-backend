@@ -1,10 +1,9 @@
 /**
- * QRDataEncoder - Handles encoding of all QR code data types
- *
- * Supports all the same types as Laravel backend:
- * - URL, Text, Email, Phone, SMS, WiFi, vCard, Location
- * - Event/iCal, WhatsApp, Social Links, Crypto, UPI/PIX
+ * Purpose: QRDataEncoder - Handles encoding of all QR code data types Supports all the same types as Laravel backend: - URL, Text, Email, Phone, SMS, WiFi, vCard, Location - Event/iCal, WhatsApp, Social Links, Crypto, UPI/PIX
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 class QRDataEncoder {
     /**
      * Supported QR code types
@@ -27,12 +26,11 @@ class QRDataEncoder {
     };
 
     /**
-     * Encode data based on QR type
-     *
-     * @param {string} type - QR code type
-     * @param {Object} data - Data to encode
-     * @returns {string} - Encoded QR content string
+     * Purpose: Encode data based on QR type
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encode(type, data) {
         if (!type || !data) {
             throw new Error('Type and data are required for encoding');
@@ -50,11 +48,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Get the encoder function for a specific type
-     *
-     * @param {string} type - QR code type
-     * @returns {Function|null} - Encoder function or null
+     * Purpose: Get the encoder function for a specific type
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getEncoder(type) {
         const encoders = {
             [this.TYPES.URL]: this.encodeUrl.bind(this),
@@ -77,10 +75,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode URL
-     * @param {Object|string} data - URL data
-     * @returns {string}
+     * Purpose: Encode URL
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeUrl(data) {
         if (typeof data === 'string') {
             return this.ensureValidUrl(data);
@@ -89,10 +88,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Ensure URL has a valid protocol
-     * @param {string} url
-     * @returns {string}
+     * Purpose: Ensure URL has a valid protocol
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static ensureValidUrl(url) {
         if (!url) return '';
         url = url.trim();
@@ -103,10 +103,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode plain text
-     * @param {Object|string} data - Text data
-     * @returns {string}
+     * Purpose: Encode plain text
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeText(data) {
         if (typeof data === 'string') {
             return data;
@@ -115,10 +116,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode email (mailto:)
-     * @param {Object} data - Email data
-     * @returns {string}
+     * Purpose: Encode email (mailto:)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeEmail(data) {
         const email = data.email || data.to || '';
         const subject = data.subject || '';
@@ -142,10 +144,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode phone number (tel:)
-     * @param {Object|string} data - Phone data
-     * @returns {string}
+     * Purpose: Encode phone number (tel:)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodePhone(data) {
         const phone = typeof data === 'string' ? data : (data.phone || data.number || data.tel || '');
         // Clean phone number - remove spaces, dashes, parentheses
@@ -154,10 +157,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode SMS
-     * @param {Object} data - SMS data
-     * @returns {string}
+     * Purpose: Encode SMS
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeSms(data) {
         const phone = data.phone || data.number || '';
         const message = data.message || data.body || '';
@@ -172,11 +176,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode WiFi credentials
-     * Format: WIFI:T:<encryption>;S:<ssid>;P:<password>;H:<hidden>;;
-     * @param {Object} data - WiFi data
-     * @returns {string}
+     * Purpose: Encode WiFi credentials Format: WIFI:T:<encryption>;S:<ssid>;P:<password>;H:<hidden>;;
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeWifi(data) {
         const ssid = data.ssid || data.network || '';
         const password = data.password || data.pass || '';
@@ -199,10 +203,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Escape special characters for WiFi QR codes
-     * @param {string} str
-     * @returns {string}
+     * Purpose: Escape special characters for WiFi QR codes
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static escapeWifiString(str) {
         if (!str) return '';
         // Escape special characters: \ ; , : "
@@ -210,11 +215,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode vCard (contact)
-     * Supports both vCard 3.0 and 4.0
-     * @param {Object} data - Contact data
-     * @returns {string}
+     * Purpose: Encode vCard (contact) Supports both vCard 3.0 and 4.0
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeVCard(data) {
         const version = data.version || '3.0';
         const lines = [];
@@ -300,10 +305,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Build full name from parts
-     * @param {Object} data
-     * @returns {string}
+     * Purpose: Build full name from parts
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static buildFullName(data) {
         if (data.fullName || data.full_name) {
             return data.fullName || data.full_name;
@@ -320,11 +326,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Add phone numbers to vCard
-     * @param {Object} data
-     * @param {Array} lines
-     * @param {string} version
+     * Purpose: Add phone numbers to vCard
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static addVCardPhones(data, lines, version) {
         const phones = data.phones || [];
 
@@ -379,11 +385,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Add email addresses to vCard
-     * @param {Object} data
-     * @param {Array} lines
-     * @param {string} version
+     * Purpose: Add email addresses to vCard
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static addVCardEmails(data, lines, version) {
         const emails = data.emails || [];
 
@@ -420,11 +426,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Add address to vCard
-     * @param {Object} data
-     * @param {Array} lines
-     * @param {string} version
+     * Purpose: Add address to vCard
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static addVCardAddress(data, lines, version) {
         // Check for address object or individual fields
         const address = data.address || {};
@@ -458,10 +464,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Add social profiles to vCard
-     * @param {Object} data
-     * @param {Array} lines
+     * Purpose: Add social profiles to vCard
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static addVCardSocialProfiles(data, lines) {
         const socialProfiles = {
             facebook: data.facebook,
@@ -481,10 +488,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Escape special characters in vCard values
-     * @param {string} value
-     * @returns {string}
+     * Purpose: Escape special characters in vCard values
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static escapeVCardValue(value) {
         if (!value) return '';
         // Escape backslash, semicolon, comma, and newlines
@@ -496,10 +504,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode geographic location
-     * @param {Object} data - Location data
-     * @returns {string}
+     * Purpose: Encode geographic location
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeLocation(data) {
         const lat = data.latitude || data.lat || 0;
         const lng = data.longitude || data.lng || data.lon || 0;
@@ -519,10 +528,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode calendar event (iCal)
-     * @param {Object} data - Event data
-     * @returns {string}
+     * Purpose: Encode calendar event (iCal)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeEvent(data) {
         const lines = [];
 
@@ -604,16 +614,22 @@ class QRDataEncoder {
     }
 
     /**
-     * Format date for iCal
-     * @param {Date|string} date
-     * @returns {string}
+     * Purpose: Format date for iCal
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static formatICalDate(date) {
         const d = date instanceof Date ? date : new Date(date);
         if (isNaN(d.getTime())) {
             return this.formatICalDate(new Date());
         }
 
+        /**
+         * Purpose: Executes pad functionality.
+         * Owner/Author: Syed Ashhad
+         * Created/Updated: January 2026
+         */
         const pad = (n) => String(n).padStart(2, '0');
 
         const year = d.getUTCFullYear();
@@ -627,10 +643,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Escape special characters for iCal
-     * @param {string} value
-     * @returns {string}
+     * Purpose: Escape special characters for iCal
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static escapeICalValue(value) {
         if (!value) return '';
         return value
@@ -641,10 +658,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode WhatsApp link
-     * @param {Object} data - WhatsApp data
-     * @returns {string}
+     * Purpose: Encode WhatsApp link
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeWhatsApp(data) {
         const phone = (data.phone || data.number || '').replace(/[\s\-\(\)\.]/g, '');
         const message = data.message || data.text || '';
@@ -660,10 +678,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode social media link
-     * @param {Object} data - Social media data
-     * @returns {string}
+     * Purpose: Encode social media link
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeSocial(data) {
         const platform = (data.platform || data.network || 'generic').toLowerCase();
         const username = data.username || data.handle || data.user || '';
@@ -697,10 +716,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode cryptocurrency address
-     * @param {Object} data - Crypto data
-     * @returns {string}
+     * Purpose: Encode cryptocurrency address
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeCrypto(data) {
         const currency = (data.currency || data.coin || data.crypto || 'bitcoin').toLowerCase();
         const address = data.address || data.wallet || '';
@@ -743,10 +763,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode UPI (Unified Payments Interface - India)
-     * @param {Object} data - UPI data
-     * @returns {string}
+     * Purpose: Encode UPI (Unified Payments Interface - India)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodeUpi(data) {
         const vpa = data.vpa || data.upiId || data.upi_id || '';
         const payeeName = data.payeeName || data.name || data.pn || '';
@@ -769,10 +790,11 @@ class QRDataEncoder {
     }
 
     /**
-     * Encode PIX (Brazilian instant payment)
-     * @param {Object} data - PIX data
-     * @returns {string}
+     * Purpose: Encode PIX (Brazilian instant payment)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static encodePix(data) {
         // PIX uses EMV QR Code format
         // This is a simplified version - full PIX requires EMVCo spec
@@ -801,18 +823,21 @@ class QRDataEncoder {
     }
 
     /**
-     * Get list of supported types
-     * @returns {string[]}
+     * Purpose: Get list of supported types
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getSupportedTypes() {
         return Object.values(this.TYPES);
     }
 
     /**
-     * Check if a type is supported
-     * @param {string} type
-     * @returns {boolean}
+     * Purpose: Check if a type is supported
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static isTypeSupported(type) {
         return this.getSupportedTypes().includes(type.toLowerCase());
     }

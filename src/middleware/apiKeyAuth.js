@@ -7,6 +7,11 @@
 
 const logger = require('../utils/logger');
 
+/**
+ * Purpose: Executes apiKeyAuth functionality.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: March 2026
+ */
 const apiKeyAuth = (req, res, next) => {
     const apiKey = req.headers['x-api-key'] || req.query.api_key;
     const validKey = process.env.QR_API_KEY;

@@ -1,16 +1,16 @@
 /**
- * SVGBuilder - Builds and manipulates SVG documents for QR codes
- *
- * This class provides a fluent interface for creating SVG documents
- * with support for gradients, paths, and other SVG elements.
+ * Purpose: SVGBuilder - Builds and manipulates SVG documents for QR codes This class provides a fluent interface for creating SVG documents with support for gradients, paths, and other SVG elements.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 class SVGBuilder {
     /**
-     * Create a new SVGBuilder instance
-     * @param {number} width - SVG width
-     * @param {number} height - SVG height
-     * @param {Object} options - Additional options
+     * Purpose: Create a new SVGBuilder instance
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     constructor(width = 300, height = 300, options = {}) {
         this.width = width;
         this.height = height;
@@ -27,33 +27,32 @@ class SVGBuilder {
     }
 
     /**
-     * Create an SVGBuilder from a size value
-     * @param {number} size - Size for both width and height
-     * @returns {SVGBuilder}
+     * Purpose: Create an SVGBuilder from a size value
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static create(size) {
         return new SVGBuilder(size, size);
     }
 
     /**
-     * Set the viewBox
-     * @param {number} x - X coordinate
-     * @param {number} y - Y coordinate
-     * @param {number} width - ViewBox width
-     * @param {number} height - ViewBox height
-     * @returns {SVGBuilder}
+     * Purpose: Set the viewBox
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     setViewBox(x, y, width, height) {
         this.viewBox = `${x} ${y} ${width} ${height}`;
         return this;
     }
 
     /**
-     * Add a background rectangle
-     * @param {string} fill - Fill color or gradient ID
-     * @param {Object} options - Additional options
-     * @returns {SVGBuilder}
+     * Purpose: Add a background rectangle
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     addBackground(fill, options = {}) {
         const attrs = {
             x: 0,
@@ -69,37 +68,33 @@ class SVGBuilder {
     }
 
     /**
-     * Create a rectangle element string
-     * @param {Object} attrs - Rectangle attributes
-     * @returns {string}
+     * Purpose: Create a rectangle element string
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRect(attrs) {
         const attrString = this.buildAttributeString(attrs);
         return `<rect ${attrString}/>`;
     }
 
     /**
-     * Add a rectangle
-     * @param {number} x - X position
-     * @param {number} y - Y position
-     * @param {number} width - Width
-     * @param {number} height - Height
-     * @param {Object} attrs - Additional attributes
-     * @returns {SVGBuilder}
+     * Purpose: Add a rectangle
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     addRect(x, y, width, height, attrs = {}) {
         this.elements.push(this.createRect({ x, y, width, height, ...attrs }));
         return this;
     }
 
     /**
-     * Add a circle
-     * @param {number} cx - Center X
-     * @param {number} cy - Center Y
-     * @param {number} r - Radius
-     * @param {Object} attrs - Additional attributes
-     * @returns {SVGBuilder}
+     * Purpose: Add a circle
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     addCircle(cx, cy, r, attrs = {}) {
         const attrString = this.buildAttributeString({ cx, cy, r, ...attrs });
         this.elements.push(`<circle ${attrString}/>`);
@@ -107,11 +102,11 @@ class SVGBuilder {
     }
 
     /**
-     * Add a path
-     * @param {string} d - Path data
-     * @param {Object} attrs - Additional attributes
-     * @returns {SVGBuilder}
+     * Purpose: Add a path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     addPath(d, attrs = {}) {
         const attrString = this.buildAttributeString({ d, ...attrs });
         this.elements.push(`<path ${attrString}/>`);
@@ -119,21 +114,22 @@ class SVGBuilder {
     }
 
     /**
-     * Add raw SVG content
-     * @param {string} content - Raw SVG content
-     * @returns {SVGBuilder}
+     * Purpose: Add raw SVG content
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     addRaw(content) {
         this.elements.push(content);
         return this;
     }
 
     /**
-     * Add a group
-     * @param {string} content - Group content
-     * @param {Object} attrs - Group attributes
-     * @returns {SVGBuilder}
+     * Purpose: Add a group
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     addGroup(content, attrs = {}) {
         const attrString = this.buildAttributeString(attrs);
         this.elements.push(`<g ${attrString}>${content}</g>`);
@@ -141,10 +137,11 @@ class SVGBuilder {
     }
 
     /**
-     * Create a linear gradient definition
-     * @param {Object} options - Gradient options
-     * @returns {string} - Gradient ID
+     * Purpose: Create a linear gradient definition
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createLinearGradient(options = {}) {
         const id = options.id || `linearGradient${++this.gradientCounter}`;
         const angle = options.angle || 0;
@@ -170,10 +167,11 @@ class SVGBuilder {
     }
 
     /**
-     * Create a radial gradient definition
-     * @param {Object} options - Gradient options
-     * @returns {string} - Gradient ID
+     * Purpose: Create a radial gradient definition
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createRadialGradient(options = {}) {
         const id = options.id || `radialGradient${++this.gradientCounter}`;
         const cx = options.cx || 50;
@@ -200,10 +198,11 @@ class SVGBuilder {
     }
 
     /**
-     * Convert angle (degrees) to gradient coordinates
-     * @param {number} angle - Angle in degrees
-     * @returns {Object} - {x1, y1, x2, y2}
+     * Purpose: Convert angle (degrees) to gradient coordinates
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     angleToGradientCoords(angle) {
         // Normalize angle to 0-360
         angle = ((angle % 360) + 360) % 360;
@@ -226,10 +225,11 @@ class SVGBuilder {
     }
 
     /**
-     * Add a drop shadow filter
-     * @param {Object} options - Filter options
-     * @returns {string} - Filter ID
+     * Purpose: Add a drop shadow filter
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createDropShadow(options = {}) {
         const id = options.id || `dropShadow${++this.filterCounter}`;
         const dx = options.dx || 2;
@@ -248,11 +248,11 @@ class SVGBuilder {
     }
 
     /**
-     * Create a clip path
-     * @param {string} content - Clip path content
-     * @param {Object} options - Options
-     * @returns {string} - Clip path ID
+     * Purpose: Create a clip path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createClipPath(content, options = {}) {
         const id = options.id || `clipPath${++this.gradientCounter}`;
         this.defs.push(`<clipPath id="${id}">${content}</clipPath>`);
@@ -260,20 +260,22 @@ class SVGBuilder {
     }
 
     /**
-     * Add a definition directly
-     * @param {string} defContent - Definition content
-     * @returns {SVGBuilder}
+     * Purpose: Add a definition directly
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     addDef(defContent) {
         this.defs.push(defContent);
         return this;
     }
 
     /**
-     * Build attribute string from object
-     * @param {Object} attrs - Attributes object
-     * @returns {string}
+     * Purpose: Build attribute string from object
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     buildAttributeString(attrs) {
         return Object.entries(attrs)
             .filter(([_, value]) => value !== undefined && value !== null)
@@ -288,9 +290,11 @@ class SVGBuilder {
     }
 
     /**
-     * Build the final SVG string
-     * @returns {string}
+     * Purpose: Build the final SVG string
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     build() {
         const viewBoxAttr = this.viewBox
             ? `viewBox="${this.viewBox}"`
@@ -308,9 +312,11 @@ ${this.elements.join('\n')}
     }
 
     /**
-     * Build the SVG without XML declaration (for embedding)
-     * @returns {string}
+     * Purpose: Build the SVG without XML declaration (for embedding)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     buildWithoutDeclaration() {
         const viewBoxAttr = this.viewBox
             ? `viewBox="${this.viewBox}"`
@@ -327,34 +333,42 @@ ${this.elements.join('\n')}
     }
 
     /**
-     * Convert to base64
-     * @returns {string}
+     * Purpose: Convert to base64
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     toBase64() {
         const svg = this.build();
         return Buffer.from(svg).toString('base64');
     }
 
     /**
-     * Convert to data URL
-     * @returns {string}
+     * Purpose: Convert to data URL
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     toDataUrl() {
         return `data:image/svg+xml;base64,${this.toBase64()}`;
     }
 
     /**
-     * Get the raw SVG string
-     * @returns {string}
+     * Purpose: Get the raw SVG string
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     toString() {
         return this.build();
     }
 
     /**
-     * Clear all elements and defs
-     * @returns {SVGBuilder}
+     * Purpose: Clear all elements and defs
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     clear() {
         this.defs = [];
         this.elements = [];
@@ -364,9 +378,11 @@ ${this.elements.join('\n')}
     }
 
     /**
-     * Clone this builder
-     * @returns {SVGBuilder}
+     * Purpose: Clone this builder
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     clone() {
         const cloned = new SVGBuilder(this.width, this.height, { ...this.options });
         cloned.defs = [...this.defs];
@@ -378,16 +394,11 @@ ${this.elements.join('\n')}
     }
 
     /**
-     * Create QR module path data
-     * This creates a path for a single QR module (square, circle, rounded, etc.)
-     *
-     * @param {number} x - X position
-     * @param {number} y - Y position
-     * @param {number} size - Module size
-     * @param {string} shape - Shape type (square, circle, rounded, etc.)
-     * @param {Object} options - Additional options
-     * @returns {string} - Path data string
+     * Purpose: Create QR module path data This creates a path for a single QR module (square, circle, rounded, etc.)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static createModulePath(x, y, size, shape = 'square', options = {}) {
         const halfSize = size / 2;
         const cornerRadius = options.cornerRadius || size * 0.25;
@@ -442,14 +453,11 @@ ${this.elements.join('\n')}
     }
 
     /**
-     * Create a rounded rectangle path
-     * @param {number} x - X position
-     * @param {number} y - Y position
-     * @param {number} width - Width
-     * @param {number} height - Height
-     * @param {number} r - Corner radius
-     * @returns {string} - Path data
+     * Purpose: Create a rounded rectangle path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static createRoundedRectPath(x, y, width, height, r) {
         r = Math.min(r, width / 2, height / 2);
         return `M ${x + r} ${y} ` +
@@ -464,14 +472,11 @@ ${this.elements.join('\n')}
     }
 
     /**
-     * Create finder pattern (the three large squares in QR corners)
-     * @param {number} x - X position
-     * @param {number} y - Y position
-     * @param {number} moduleSize - Size of one module
-     * @param {string} shape - Shape type
-     * @param {Object} colors - Colors for outer, middle, inner
-     * @returns {Object} - {outer, middle, inner} path data
+     * Purpose: Create finder pattern (the three large squares in QR corners)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static createFinderPattern(x, y, moduleSize, shape = 'square', colors = {}) {
         const outerSize = moduleSize * 7;
         const middleSize = moduleSize * 5;
@@ -531,8 +536,11 @@ ${this.elements.join('\n')}
     }
 
     /**
-     * Create a square finder pattern path
+     * Purpose: Create a square finder pattern path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static createSquareFinderPath(x, y, size, isHollow = false) {
         if (isHollow) {
             // Create hollow square (just the outline)
@@ -545,8 +553,11 @@ ${this.elements.join('\n')}
     }
 
     /**
-     * Create a circle finder pattern path
+     * Purpose: Create a circle finder pattern path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static createCircleFinderPath(x, y, size, isHollow = false) {
         const cx = x + size / 2;
         const cy = y + size / 2;
@@ -562,8 +573,11 @@ ${this.elements.join('\n')}
     }
 
     /**
-     * Create a rounded finder pattern path
+     * Purpose: Create a rounded finder pattern path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static createRoundedFinderPath(x, y, size, radius, isHollow = false) {
         const path = this.createRoundedRectPath(x, y, size, size, radius);
 
@@ -583,8 +597,11 @@ ${this.elements.join('\n')}
     }
 
     /**
-     * Create a leaf-shaped finder pattern path
+     * Purpose: Create a leaf-shaped finder pattern path
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static createLeafFinderPath(x, y, size, isHollow = false) {
         const r = size * 0.5;
 

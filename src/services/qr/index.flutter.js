@@ -14,19 +14,28 @@ const FrameProcessor = require('./processors/FrameProcessor');
 const LogoProcessor = require('./processors/LogoProcessor');
 
 /**
- * Main QR Engine API for Flutter
+ * Purpose: Main QR Engine API for Flutter
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: February 2026
  */
+
 class FlutterQREngine {
+  /**
+   * Purpose: Constructor for constructor.
+   * Owner/Author: Syed Ashhad
+   * Created/Updated: February 2026
+   */
   constructor() {
     this.generator = new QRCodeGenerator();
     this.encoder = new QRDataEncoder();
   }
 
   /**
-   * Generate QR code SVG (main entry point)
-   * @param {Object} params - { type, data, design, options }
-   * @returns {Object} - { svg, svgBase64, meta }
+   * Purpose: Generate QR code SVG (main entry point)
+   * Owner/Author: Syed Ashhad
+   * Created/Updated: February 2026
    */
+  
   generateSVG(params) {
     try {
       const { type, data, design, options = {} } = params;
@@ -103,10 +112,11 @@ class FlutterQREngine {
   }
 
   /**
-   * Validate design configuration
-   * @param {Object} design
-   * @returns {Object} - { valid, errors }
+   * Purpose: Validate design configuration
+   * Owner/Author: Syed Ashhad
+   * Created/Updated: February 2026
    */
+  
   validateDesign(design) {
     const errors = [];
 
@@ -132,9 +142,11 @@ class FlutterQREngine {
   }
 
   /**
-   * Get supported features
-   * @returns {Object}
+   * Purpose: Get supported features
+   * Owner/Author: Syed Ashhad
+   * Created/Updated: February 2026
    */
+  
   getCapabilities() {
     return {
       qrTypes: [
@@ -173,6 +185,11 @@ class FlutterQREngine {
     };
   }
 
+  /**
+   * Purpose: Checks if validcolor.
+   * Owner/Author: Syed Ashhad
+   * Created/Updated: February 2026
+   */
   _isValidColor(color) {
     return /^#[0-9A-Fa-f]{6}$/.test(color) || /^#[0-9A-Fa-f]{3}$/.test(color);
   }

@@ -12,26 +12,40 @@ const BaseProcessor = require('./BaseProcessor');
 let Color = require('color');
 if (Color.default) Color = Color.default;
 
+/**
+ * Purpose: Class definition for ColorProcessor.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
+ */
 class ColorProcessor extends BaseProcessor {
+    /**
+     * Purpose: Constructor for constructor.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
+     */
     constructor() {
         super('ColorProcessor', 5);
     }
 
     /**
-     * Check if this processor should process the payload
-     * @param {Object} payload
-     * @returns {boolean}
+     * Purpose: Check if this processor should process the payload
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     shouldProcess(payload) {
         // Always process - colors are always needed
         return true;
     }
 
     /**
-     * Process the payload to apply colors
-     * @param {Object} payload
-     * @returns {Object}
+     * Purpose: Process the payload to apply colors
+     * Owner/Author: Syed Ashhad
+     * Created: January 2026
+     * Last Editor: Syed Ashhad
+     * Last Updated: February 2026
      */
+    
     process(payload) {
         const { design, svgBuilder } = payload;
 
@@ -58,10 +72,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Parse colors from design object
-     * @param {Object} design
-     * @returns {Object}
+     * Purpose: Parse colors from design object
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     parseColors(design) {
         const foreground = this.normalizeColor(
             design.foregroundColor || design.foreground_color || design.fgColor || '#000000'
@@ -102,10 +117,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Normalize a color value to a valid CSS color
-     * @param {string} color
-     * @returns {string}
+     * Purpose: Normalize a color value to a valid CSS color
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     normalizeColor(color) {
         if (!color) return '#000000';
 
@@ -136,10 +152,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Parse color to get RGBA components
-     * @param {string} color
-     * @returns {Object} - {r, g, b, a}
+     * Purpose: Parse color to get RGBA components
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     parseColorComponents(color) {
         try {
             const parsed = Color(color);
@@ -156,11 +173,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Create gradient definition and return gradient ID
-     * @param {SVGBuilder} svgBuilder
-     * @param {Object} design
-     * @returns {string} - Gradient ID
+     * Purpose: Create gradient definition and return gradient ID
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createGradientDef(svgBuilder, design) {
         const gradientConfig = design.gradientFill || design.gradient_fill || design.gradient || {};
 
@@ -197,10 +214,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Parse gradient colors array
-     * @param {Array} colors
-     * @returns {Array}
+     * Purpose: Parse gradient colors array
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     parseGradientColors(colors) {
         if (!Array.isArray(colors) || colors.length === 0) {
             return [
@@ -236,10 +254,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Normalize angle to 0-360 range
-     * @param {number|string} angle
-     * @returns {number}
+     * Purpose: Normalize angle to 0-360 range
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     normalizeAngle(angle) {
         // Handle string angles like "45deg"
         if (typeof angle === 'string') {
@@ -268,10 +287,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Generate contrasting color
-     * @param {string} color
-     * @returns {string}
+     * Purpose: Generate contrasting color
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     getContrastColor(color) {
         try {
             const parsed = Color(color);
@@ -287,11 +307,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Lighten a color by percentage
-     * @param {string} color
-     * @param {number} amount - Percentage to lighten (0-100)
-     * @returns {string}
+     * Purpose: Lighten a color by percentage
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     lightenColor(color, amount = 20) {
         try {
             const parsed = Color(color);
@@ -302,11 +322,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Darken a color by percentage
-     * @param {string} color
-     * @param {number} amount - Percentage to darken (0-100)
-     * @returns {string}
+     * Purpose: Darken a color by percentage
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     darkenColor(color, amount = 20) {
         try {
             const parsed = Color(color);
@@ -317,12 +337,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Mix two colors
-     * @param {string} color1
-     * @param {string} color2
-     * @param {number} weight - Weight of first color (0-1)
-     * @returns {string}
+     * Purpose: Mix two colors
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     mixColors(color1, color2, weight = 0.5) {
         try {
             const c1 = Color(color1);
@@ -334,10 +353,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Check if color has transparency
-     * @param {string} color
-     * @returns {boolean}
+     * Purpose: Check if color has transparency
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     hasTransparency(color) {
         try {
             const parsed = Color(color);
@@ -348,11 +368,11 @@ class ColorProcessor extends BaseProcessor {
     }
 
     /**
-     * Get color with specified opacity
-     * @param {string} color
-     * @param {number} opacity - 0 to 1
-     * @returns {string}
+     * Purpose: Get color with specified opacity
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     withOpacity(color, opacity) {
         try {
             const parsed = Color(color);

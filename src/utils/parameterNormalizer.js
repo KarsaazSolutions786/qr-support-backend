@@ -12,20 +12,22 @@
 const logger = require('./logger');
 
 /**
- * Convert a snake_case string to camelCase
- * @param {string} str - snake_case string
- * @returns {string} camelCase string
+ * Purpose: Convert a snake_case string to camelCase
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 function toCamelCase(str) {
     if (!str || typeof str !== 'string') return str;
     return str.replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
 }
 
 /**
- * Convert a camelCase string to snake_case
- * @param {string} str - camelCase string
- * @returns {string} snake_case string
+ * Purpose: Convert a camelCase string to snake_case
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 function toSnakeCase(str) {
     if (!str || typeof str !== 'string') return str;
     return str
@@ -106,10 +108,11 @@ const DESIGN_PARAM_MAPPING = {
 };
 
 /**
- * Recursively normalize object keys to camelCase (backend expectation)
- * @param {object} obj - Object with keys
- * @returns {object} Object with camelCase keys
+ * Purpose: Recursively normalize object keys to camelCase (backend expectation)
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 function normalizeToCamelCase(obj) {
     if (obj === null || obj === undefined) {
         return obj;
@@ -146,12 +149,11 @@ function normalizeToCamelCase(obj) {
 }
 
 /**
- * Normalize design parameters specifically for Laravel backend
- * Laravel expects CAMEL CASE keys (e.g. 'advancedShape', 'foregroundColor')
- * 
- * @param {object} design - Design object from Flutter
- * @returns {object} Normalized design object for Laravel (camelCase)
+ * Purpose: Normalize design parameters specifically for Laravel backend Laravel expects CAMEL CASE keys (e.g. 'advancedShape', 'foregroundColor')
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 function normalizeDesignForLaravel(design) {
     if (!design || typeof design !== 'object') {
         return design || {};
@@ -169,11 +171,11 @@ function normalizeDesignForLaravel(design) {
 }
 
 /**
- * Normalize complete request payload for Laravel
- * 
- * @param {object} payload - Full request payload
- * @returns {object} Normalized payload
+ * Purpose: Normalize complete request payload for Laravel
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 function normalizeRequestForLaravel(payload) {
     if (!payload || typeof payload !== 'object') {
         return payload || {};
@@ -201,12 +203,11 @@ function normalizeRequestForLaravel(payload) {
 }
 
 /**
- * Check if a design parameter exists
- * 
- * @param {object} design - Design object
- * @param {string} key - Key name (camelCase or snake_case)
- * @returns {*} The value if found, undefined otherwise
+ * Purpose: Check if a design parameter exists
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 function getDesignParam(design, key) {
     if (!design) return undefined;
 

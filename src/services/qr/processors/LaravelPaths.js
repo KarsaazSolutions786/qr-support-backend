@@ -17,11 +17,11 @@
  */
 
 /**
- * Splits a compound SVG path into its subpaths.
- * Compound paths have multiple M...z segments that create cutouts with evenodd fill rule.
- * @param {string} path - The compound path string
- * @returns {string[]} - Array of individual subpaths
+ * Purpose: Splits a compound SVG path into its subpaths. Compound paths have multiple M...z segments that create cutouts with evenodd fill rule.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 function splitCompoundPath(path) {
     if (!path) return [];
 
@@ -38,22 +38,22 @@ function splitCompoundPath(path) {
 }
 
 /**
- * Extracts the outer solid path from a compound path.
- * For Laravel QR paths, the first subpath is typically the outer boundary.
- * @param {string} compoundPath
- * @returns {string}
+ * Purpose: Extracts the outer solid path from a compound path. For Laravel QR paths, the first subpath is typically the outer boundary.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 function getOuterSolidPath(compoundPath) {
     const parts = splitCompoundPath(compoundPath);
     return parts[0] || compoundPath;
 }
 
 /**
- * Extracts the inner solid path from a compound path.
- * For Laravel QR paths, the second subpath is typically the inner cutout boundary.
- * @param {string} compoundPath
- * @returns {string|null}
+ * Purpose: Extracts the inner solid path from a compound path. For Laravel QR paths, the second subpath is typically the inner cutout boundary.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 function getInnerSolidPath(compoundPath) {
     const parts = splitCompoundPath(compoundPath);
     return parts[1] || null;

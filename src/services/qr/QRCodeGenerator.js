@@ -76,7 +76,17 @@ const DEFAULT_DESIGN = {
     advancedShapeTextColor: '#FFFFFF',
 };
 
+/**
+ * Purpose: Class definition for QRCodeGenerator.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
+ */
 class QRCodeGenerator {
+    /**
+     * Purpose: Constructor for constructor.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
+     */
     constructor(options = {}) {
         this.options = options;
 
@@ -102,14 +112,13 @@ class QRCodeGenerator {
     }
 
     /**
-     * Generate a QR code with full styling
-     *
-     * @param {string} type - QR code type (url, text, email, etc.)
-     * @param {Object} data - Data to encode
-     * @param {Object} design - Design configuration
-     * @param {Object} options - Additional options (size, format, etc.)
-     * @returns {Object} - {svg: string, png: Buffer, base64: string}
+     * Purpose: Generate a QR code with full styling
+     * Owner/Author: Syed Ashhad
+     * Created: January 2026
+     * Last Editor: Syed Ashhad
+     * Last Updated: March 2026
      */
+    
     async generate(type, data, design = {}, options = {}) {
         const startTime = Date.now();
 
@@ -205,14 +214,13 @@ class QRCodeGenerator {
     }
 
     /**
-     * Generate a quick preview (optimized for speed)
-     *
-     * @param {string} type
-     * @param {Object} data
-     * @param {Object} design
-     * @param {Object} options
-     * @returns {Object}
+     * Purpose: Generate a quick preview (optimized for speed)
+     * Owner/Author: Syed Ashhad
+     * Created: January 2026
+     * Last Editor: Syed Ashhad
+     * Last Updated: February 2026
      */
+    
     generatePreview(type, data, design = {}, options = {}) {
         // Use smaller size for preview
         const previewOptions = {
@@ -225,12 +233,13 @@ class QRCodeGenerator {
     }
 
     /**
-     * Generate QR code matrix using qrcode library
-     *
-     * @param {string} content - Content to encode
-     * @param {Object} design - Design with error correction level
-     * @returns {Object} - QR matrix data
+     * Purpose: Generate QR code matrix using qrcode library
+     * Owner/Author: Syed Ashhad
+     * Created: January 2026
+     * Last Editor: Syed Ashhad
+     * Last Updated: February 2026
      */
+    
     generateQRMatrix(content, design) {
         const errorCorrectionLevel = this.getErrorCorrectionLevel(design.errorCorrection);
 
@@ -263,11 +272,11 @@ class QRCodeGenerator {
     }
 
     /**
-     * Map error correction string to QRCode library level
-     *
-     * @param {string} level
-     * @returns {string}
+     * Purpose: Map error correction string to QRCode library level
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     getErrorCorrectionLevel(level) {
         const levels = {
             'L': 'L',
@@ -284,24 +293,22 @@ class QRCodeGenerator {
     }
 
     /**
-     * Calculate module size based on QR size, image size, and margin
-     *
-     * @param {number} qrSize - Number of modules in QR
-     * @param {number} imageSize - Target image size
-     * @param {number} margin - Margin in modules
-     * @returns {number}
+     * Purpose: Calculate module size based on QR size, image size, and margin
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     calculateModuleSize(qrSize, imageSize, margin) {
         const totalModules = qrSize + margin * 2;
         return imageSize / totalModules;
     }
 
     /**
-     * Build the final SVG from payload
-     *
-     * @param {Object} payload
-     * @returns {string}
+     * Purpose: Build the final SVG from payload
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     buildSVG(payload) {
         const { svgBuilder, qrMatrix, design, size, moduleSize, startX, startY } = payload;
         const foregroundFill = payload.foregroundFill || '#000000';
@@ -406,13 +413,11 @@ class QRCodeGenerator {
     }
 
     /**
-     * Check if a module is part of a finder pattern
-     *
-     * @param {number} row
-     * @param {number} col
-     * @param {number} size
-     * @returns {boolean}
+     * Purpose: Check if a module is part of a finder pattern
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     isFinderPatternModule(row, col, size) {
         // Top-left finder pattern (0,0 to 6,6)
         if (row < 7 && col < 7) return true;
@@ -427,11 +432,11 @@ class QRCodeGenerator {
     }
 
     /**
-     * Add finder patterns to the SVG
-     *
-     * @param {SVGBuilder} svgBuilder
-     * @param {Object} payload
+     * Purpose: Add finder patterns to the SVG
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     addFinderPatterns(svgBuilder, payload) {
         const { qrMatrix, design, moduleSize, startX, startY } = payload;
         const foregroundFill = payload.foregroundFill || '#000000';
@@ -460,6 +465,11 @@ class QRCodeGenerator {
             );
 
             // Helper to add path (handles string or object with attrs)
+            /**
+             * Purpose: Executes addPath functionality.
+             * Owner/Author: Syed Ashhad
+             * Created/Updated: January 2026
+             */
             const addPath = (pathData, defaultAttrs) => {
                 if (typeof pathData === 'object' && pathData !== null && pathData.d) {
                     svgBuilder.addPath(pathData.d, { ...defaultAttrs, ...pathData.attrs });
@@ -498,11 +508,11 @@ class QRCodeGenerator {
     // }
 
     /**
-     * Merge user design with defaults
-     *
-     * @param {Object} design
-     * @returns {Object}
+     * Purpose: Merge user design with defaults
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     mergeDesign(design) {
         if (!design) return { ...DEFAULT_DESIGN };
 
@@ -516,11 +526,11 @@ class QRCodeGenerator {
     }
 
     /**
-     * Normalize design keys (handle both snake_case and camelCase)
-     *
-     * @param {Object} design
-     * @returns {Object}
+     * Purpose: Normalize design keys (handle both snake_case and camelCase)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     normalizeDesignKeys(design) {
         const keyMap = {
             'foreground_color': 'foregroundColor',
@@ -559,19 +569,21 @@ class QRCodeGenerator {
     }
 
     /**
-     * Get list of supported QR types
-     *
-     * @returns {string[]}
+     * Purpose: Get list of supported QR types
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getSupportedTypes() {
         return QRDataEncoder.getSupportedTypes();
     }
 
     /**
-     * Get capabilities of this generator
-     *
-     * @returns {Object}
+     * Purpose: Get capabilities of this generator
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getCapabilities() {
         return {
             version: '2.5.0',

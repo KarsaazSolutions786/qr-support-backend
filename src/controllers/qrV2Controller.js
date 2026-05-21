@@ -20,9 +20,11 @@ const logger = require('../utils/logger');
 const generator = new QRCodeGenerator();
 
 /**
- * Generate a full QR code with all styling
- *
- * POST /api/v2/qr/generate
+ * Purpose: Generate a full QR code with all styling POST /api/v2/qr/generate Body: { type: "url" | "text" | "email" | "phone" | "sms" | "wifi" | "vcard" | "location" | "event" | "whatsapp" | "social" | "crypto" | "upi" | "pix", data: { ... },  // Type-specific data design: { ... }, // Design configuration options: { size: 512,      // Output size format: "both", // "svg" | "png" | "both" quality: 90,    // PNG quality (1-100) transparent: false, // Transparent background for PNG } }
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
+ */
+/* POST /api/v2/qr/generate
  *
  * Body:
  * {
@@ -37,6 +39,7 @@ const generator = new QRCodeGenerator();
  *   }
  * }
  */
+
 async function generate(req, res) {
     const startTime = Date.now();
 
@@ -148,12 +151,11 @@ async function generate(req, res) {
 }
 
 /**
- * Generate a quick preview (optimized for speed)
- *
- * POST /api/v2/qr/preview
- *
- * Same body as /generate but uses smaller default size
+ * Purpose: Generate a quick preview (optimized for speed) POST /api/v2/qr/preview Same body as /generate but uses smaller default size
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 async function preview(req, res) {
     const startTime = Date.now();
 
@@ -229,10 +231,11 @@ async function preview(req, res) {
 }
 
 /**
- * Get QR generator capabilities
- *
- * GET /api/v2/qr/capabilities
+ * Purpose: Get QR generator capabilities GET /api/v2/qr/capabilities
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 async function getCapabilities(req, res) {
     try {
         const capabilities = QRCodeGenerator.getCapabilities();
@@ -254,17 +257,11 @@ async function getCapabilities(req, res) {
 }
 
 /**
- * Validate design before generation
- *
- * POST /api/v2/qr/validate
- *
- * Body:
- * {
- *   type: "url",
- *   data: { ... },
- *   design: { ... }
- * }
+ * Purpose: Validate design before generation POST /api/v2/qr/validate Body: { type: "url", data: { ... }, design: { ... } }
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 async function validateDesign(req, res) {
     try {
         const { type, data, design = {} } = req.body;
@@ -381,22 +378,11 @@ async function validateDesign(req, res) {
 }
 
 /**
- * Generate multiple QR codes in batch
- *
- * POST /api/v2/qr/batch
- *
- * Body:
- * {
- *   items: [
- *     { type, data, design, options },
- *     { type, data, design, options },
- *     ...
- *   ],
- *   options: {
- *     stopOnError: false, // Continue even if one fails
- *   }
- * }
+ * Purpose: Generate multiple QR codes in batch POST /api/v2/qr/batch Body: { items: [ { type, data, design, options }, { type, data, design, options }, ... ], options: { stopOnError: false, // Continue even if one fails } }
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 async function batch(req, res) {
     const startTime = Date.now();
 
@@ -494,8 +480,11 @@ async function batch(req, res) {
 }
 
 /**
- * Helper to validate color format
+ * Purpose: Helper to validate color format
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
  */
+
 function isValidColor(color) {
     if (!color) return false;
 

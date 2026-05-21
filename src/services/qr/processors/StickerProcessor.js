@@ -30,7 +30,17 @@
  */
 const BaseProcessor = require('./BaseProcessor');
 
+/**
+ * Purpose: Class definition for StickerProcessor.
+ * Owner/Author: Syed Ashhad
+ * Created/Updated: January 2026
+ */
 class StickerProcessor extends BaseProcessor {
+    /**
+     * Purpose: Constructor for constructor.
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
+     */
     constructor() {
         super('StickerProcessor', 105);
 
@@ -67,10 +77,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Check if this processor should process the payload
-     * @param {Object} payload
-     * @returns {boolean}
+     * Purpose: Check if this processor should process the payload
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     shouldProcess(payload) {
         const { design } = payload;
         // Also check advancedShape - Flutter sends sticker type via this field
@@ -81,10 +92,13 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Process the payload to prepare sticker data
-     * @param {Object} payload
-     * @returns {Object}
+     * Purpose: Process the payload to prepare sticker data
+     * Owner/Author: Syed Ashhad
+     * Created: January 2026
+     * Last Editor: Syed Ashhad
+     * Last Updated: February 2026
      */
+    
     process(payload) {
         const { design, size } = payload;
 
@@ -120,10 +134,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Get default text for sticker type
-     * @param {string} stickerType
-     * @returns {string}
+     * Purpose: Get default text for sticker type
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     getDefaultText(stickerType) {
         const defaults = {
             'coupon': 'COUPON',
@@ -146,11 +161,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Generate sticker SVG elements
-     * @param {Object} stickerInfo - Sticker info from payload
-     * @param {number} svgSize - Total SVG size
-     * @returns {Object} - { element: string, defs: string }
+     * Purpose: Generate sticker SVG elements
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     generateStickerSVG(stickerInfo, svgSize) {
         if (!stickerInfo || stickerInfo.type === 'none') {
             return { element: '', defs: '' };
@@ -169,8 +184,11 @@ class StickerProcessor extends BaseProcessor {
     // ========================================
 
     /**
-     * Coupon badge sticker
+     * Purpose: Coupon badge sticker
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createCouponSticker(info, svgSize) {
         const { x, y, size, color, textColor, text, dropShadow } = info;
         const cx = x + size / 2;
@@ -213,8 +231,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Sale badge sticker (circular)
+     * Purpose: Sale badge sticker (circular)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createSaleSticker(info, svgSize) {
         const { x, y, size, color, textColor, text, dropShadow } = info;
         const cx = x + size / 2;
@@ -245,8 +266,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Discount badge sticker (starburst)
+     * Purpose: Discount badge sticker (starburst)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createDiscountSticker(info, svgSize) {
         const { x, y, size, color, textColor, text, dropShadow } = info;
         const cx = x + size / 2;
@@ -290,8 +314,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * New badge sticker
+     * Purpose: New badge sticker
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createNewSticker(info, svgSize) {
         const { x, y, size, color, textColor, text, dropShadow } = info;
         const cx = x + size / 2;
@@ -322,8 +349,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Hot badge sticker (flame icon)
+     * Purpose: Hot badge sticker (flame icon)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createHotSticker(info, svgSize) {
         const { x, y, size, color, textColor, text, dropShadow } = info;
         const cx = x + size / 2;
@@ -354,8 +384,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Star badge sticker
+     * Purpose: Star badge sticker
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createStarBadgeSticker(info, svgSize) {
         const { x, y, size, color, textColor, dropShadow } = info;
         const cx = x + size / 2;
@@ -390,8 +423,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Heart badge sticker
+     * Purpose: Heart badge sticker
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createHeartBadgeSticker(info, svgSize) {
         const { x, y, size, color, dropShadow } = info;
         const cx = x + size / 2;
@@ -423,8 +459,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Check/verified badge sticker
+     * Purpose: Check/verified badge sticker
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createCheckBadgeSticker(info, svgSize) {
         const { x, y, size, color, textColor, dropShadow } = info;
         const cx = x + size / 2;
@@ -459,8 +498,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Info badge sticker
+     * Purpose: Info badge sticker
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createInfoBadgeSticker(info, svgSize) {
         const { x, y, size, color, textColor, dropShadow } = info;
         const cx = x + size / 2;
@@ -492,8 +534,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Gift badge sticker
+     * Purpose: Gift badge sticker
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createGiftBadgeSticker(info, svgSize) {
         const { x, y, size, color, textColor, dropShadow } = info;
         const cx = x + size / 2;
@@ -527,8 +572,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Location pin sticker
+     * Purpose: Location pin sticker
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createLocationPinSticker(info, svgSize) {
         const { x, y, size, color, textColor, dropShadow } = info;
         const cx = x + size / 2;
@@ -559,8 +607,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * QR Details sticker
+     * Purpose: QR Details sticker
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createQRDetailsSticker(info, svgSize) {
         const { x, y, size, color, textColor, text, dropShadow } = info;
         const cx = x + size / 2;
@@ -591,8 +642,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Pincode protected sticker (lock icon)
+     * Purpose: Pincode protected sticker (lock icon)
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createPincodeSticker(info, svgSize) {
         const { x, y, size, color, textColor, dropShadow } = info;
         const cx = x + size / 2;
@@ -631,8 +685,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * WiFi badge sticker
+     * Purpose: WiFi badge sticker
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createWifiBadgeSticker(info, svgSize) {
         const { x, y, size, color, textColor, dropShadow } = info;
         const cx = x + size / 2;
@@ -664,8 +721,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Scan badge sticker
+     * Purpose: Scan badge sticker
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createScanBadgeSticker(info, svgSize) {
         const { x, y, size, color, textColor, text, dropShadow } = info;
         const cx = x + size / 2;
@@ -715,8 +775,11 @@ class StickerProcessor extends BaseProcessor {
     // ========================================
 
     /**
-     * Create drop shadow filter definition
+     * Purpose: Create drop shadow filter definition
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     createDropShadowDef(id) {
         return `
             <filter id="${id}" x="-30%" y="-30%" width="160%" height="160%">
@@ -726,8 +789,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Escape XML special characters
+     * Purpose: Escape XML special characters
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     escapeXml(text) {
         if (!text) return '';
         return String(text)
@@ -739,8 +805,11 @@ class StickerProcessor extends BaseProcessor {
     }
 
     /**
-     * Get list of supported sticker types
+     * Purpose: Get list of supported sticker types
+     * Owner/Author: Syed Ashhad
+     * Created/Updated: January 2026
      */
+    
     static getSupportedStickers() {
         return [
             'none',
